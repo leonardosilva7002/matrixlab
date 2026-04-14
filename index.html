@@ -1,0 +1,3686 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Matrizes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --s1: #0f0f1a;
+  --s2: #161624;
+  --s3: #1e1e32;
+  --acc: #6c63ff;
+  --acc2: #ff63c8;
+  --gold: #ffd166;
+  --green: #06d6a0;
+  --red: #ef476f;
+  --blue: #118ab2;
+  --text: #eeeef8;
+  --muted: #5555a0;
+  --border: #25253d;
+  --border2: #32324e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* Animated background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 800px 400px at 20% 10%,rgba(108,99,255,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 600px 600px at 80% 90%,rgba(255,99,200,.05) 0%,transparent 70%),
+    linear-gradient(rgba(108,99,255,.025) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,rgba(108,99,255,.025) 1px,transparent 1px) 0 0/44px 44px;
+  pointer-events:none;z-index:0;
+}
+
+/* ── LAYOUT ── */
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:260px;min-width:260px;
+  background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;
+  position:sticky;top:0;height:100vh;
+  overflow-y:auto;
+}
+.sidebar-logo{
+  padding:28px 24px 20px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo .tag{
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--acc);background:rgba(108,99,255,.12);
+  border:1px solid rgba(108,99,255,.2);
+  padding:3px 10px;border-radius:2px;margin-bottom:10px;display:inline-block;
+}
+.sidebar-logo h1{
+  font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;
+  background:linear-gradient(135deg,var(--text) 40%,var(--acc));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.2;
+}
+.sidebar-logo p{font-size:10px;color:var(--muted);margin-top:4px}
+
+.nav-section{padding:16px 12px 6px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 16px;margin:2px 8px;
+  border-radius:8px;cursor:pointer;
+  font-size:12px;color:var(--muted);
+  transition:all .2s;border:1px solid transparent;
+  user-select:none;
+}
+.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.nav-item.active{background:rgba(108,99,255,.12);color:var(--text);border-color:rgba(108,99,255,.3)}
+.nav-item .icon{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+  background:var(--s3);transition:background .2s;
+}
+.nav-item.active .icon{background:rgba(108,99,255,.25)}
+.nav-item .badge{
+  margin-left:auto;font-size:9px;padding:2px 7px;
+  border-radius:10px;background:var(--s3);color:var(--muted);
+}
+.nav-item.active .badge{background:rgba(108,99,255,.2);color:var(--acc)}
+
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);text-align:center}
+
+/* ── MAIN ── */
+.main{flex:1;padding:40px 36px 80px;min-width:0;overflow-y:auto;max-height:100vh}
+
+.page{display:none;animation:fadeIn .3s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.page-header{margin-bottom:32px}
+.page-header .back{
+  font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;
+  transition:color .2s;
+}
+.page-header .back:hover{color:var(--acc)}
+.page-header h2{
+  font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;
+  color:var(--text);line-height:1.1;margin-bottom:6px;
+}
+.page-header p{font-size:11px;color:var(--muted);line-height:1.7;max-width:520px}
+
+/* ── HOME ── */
+.home-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;margin-top:8px;
+}
+.home-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.home-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(108,99,255,.08),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.home-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.home-card:hover::before{opacity:1}
+.home-card .card-icon{font-size:1.8rem;margin-bottom:12px}
+.home-card h3{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:6px}
+.home-card p{font-size:10px;color:var(--muted);line-height:1.6}
+.home-card .card-tag{
+  display:inline-block;margin-top:12px;font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;padding:3px 9px;border-radius:3px;
+  background:rgba(108,99,255,.1);color:var(--acc);border:1px solid rgba(108,99,255,.2);
+}
+
+/* ── DIM CONTROLS ── */
+.dim-bar{
+  display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;
+}
+.dim-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:14px 18px;display:flex;flex-direction:column;gap:8px;
+}
+.dim-card label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.dim-row{display:flex;align-items:center;gap:8px}
+.dim-row span{font-size:11px;color:var(--muted)}
+.dbtn{
+  background:var(--s3);border:1px solid var(--border2);color:var(--text);
+  width:26px;height:26px;border-radius:4px;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-family:'JetBrains Mono',monospace;
+}
+.dbtn:hover{background:var(--acc);border-color:var(--acc)}
+.dbtn:active{transform:scale(.9)}
+.dval{
+  background:transparent;border:none;color:var(--acc);
+  font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;
+  width:28px;text-align:center;outline:none;
+}
+
+/* ── MATRIX AREA ── */
+.mat-area{
+  display:flex;align-items:flex-start;justify-content:flex-start;
+  gap:0;flex-wrap:wrap;margin-bottom:28px;
+}
+.mat-block{display:flex;flex-direction:column;align-items:center;gap:8px}
+.mat-label{
+  font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+}
+.mat-label span{color:var(--acc);font-weight:600}
+.bracket-wrap{display:flex;align-items:stretch;gap:5px}
+.bracket{display:flex;align-items:center;opacity:.35;transition:opacity .2s}
+.bracket-wrap:hover .bracket{opacity:.7}
+.mat-grid{display:grid;gap:4px}
+.cell{
+  width:50px;height:42px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border);border-radius:5px;
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;
+  text-align:center;outline:none;transition:all .2s;padding:0 3px;
+}
+.cell:focus{background:rgba(108,99,255,.08);border-color:var(--acc);box-shadow:0 0 0 3px rgba(108,99,255,.12)}
+.cell:hover:not(:focus){border-color:rgba(108,99,255,.3)}
+.cell::-webkit-inner-spin-button,.cell::-webkit-outer-spin-button{-webkit-appearance:none}
+.cell[type=number]{-moz-appearance:textfield}
+.rcell{
+  min-width:62px;height:48px;
+  background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.18);
+  border-radius:5px;color:var(--green);font-family:'JetBrains Mono',monospace;
+  font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  transition:all .3s;padding:0 6px;
+}
+.rcell.pop{animation:cpop .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes cpop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+
+.op-sym{
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  color:var(--muted);padding:0 16px;align-self:center;margin-top:26px;user-select:none;
+}
+.eq-sym{
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  color:var(--acc);padding:0 16px;align-self:center;margin-top:26px;user-select:none;
+}
+
+/* ── COMPAT BADGE ── */
+.compat{
+  display:inline-flex;align-items:center;gap:8px;font-size:10px;
+  padding:5px 14px;border-radius:20px;margin-bottom:16px;
+  background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);color:var(--green);
+}
+.compat.bad{background:rgba(239,71,111,.08);border-color:rgba(239,71,111,.2);color:var(--red)}
+.compat .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── ACTIONS ── */
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.btn-primary{
+  background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:12px 32px;border-radius:6px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(108,99,255,.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{
+  background:transparent;border:1px solid var(--border2);color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;padding:12px 24px;border-radius:6px;cursor:pointer;transition:all .2s;
+}
+.btn-secondary:hover{border-color:var(--red);color:var(--red)}
+.btn-rnd{
+  background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.2);color:var(--gold);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;padding:12px 20px;border-radius:6px;cursor:pointer;transition:all .2s;
+}
+.btn-rnd:hover{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.4)}
+
+/* ── OP SELECT BUTTONS ── */
+.op-sel-btn{
+  background:var(--s2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:.08em;padding:8px 18px;border-radius:6px;cursor:pointer;
+  transition:all .2s;
+}
+.op-sel-btn:hover{border-color:var(--acc);color:var(--acc)}
+.op-sel-btn.active{background:rgba(108,99,255,.15);border-color:var(--acc);color:var(--acc)}
+
+/* ── OP CHAIN ROW ── */
+.op-chain-row{
+  display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;
+  margin-bottom:18px;
+}
+.op-chain-block{
+  display:flex;flex-direction:column;gap:6px;
+}
+.op-chain-label{
+  font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+}
+.op-between{
+  display:flex;flex-direction:column;align-items:center;
+  gap:6px;padding-bottom:28px;
+}
+.op-between-btns{
+  display:flex;flex-direction:column;gap:3px;
+}
+.op-between-btn{
+  background:var(--s3);border:1px solid var(--border2);color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  width:36px;height:28px;border-radius:4px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.op-between-btn:hover{background:rgba(108,99,255,.15);border-color:var(--acc);color:var(--acc)}
+.op-between-btn.active-op{background:rgba(108,99,255,.2);border-color:var(--acc);color:var(--acc)}
+
+/* ── ERROR ── */
+.err{
+  font-size:11px;color:var(--red);
+  background:rgba(239,71,111,.08);border:1px solid rgba(239,71,111,.2);
+  border-radius:6px;padding:10px 18px;margin-bottom:18px;display:none;
+}
+.err.show{display:block;animation:fadeIn .3s ease}
+
+/* ── RESULT SCALAR ── */
+.scalar-result{
+  background:var(--s1);border:1px solid rgba(6,214,160,.25);border-radius:10px;
+  padding:20px 28px;display:inline-flex;align-items:baseline;gap:14px;margin-bottom:24px;
+}
+.scalar-result .sr-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.scalar-result .sr-value{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--green)}
+
+/* ── STEPS ── */
+.steps{margin-top:32px}
+.steps-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.steps-header h3{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700}
+.steps-header hr{flex:1;border:none;border-top:1px solid var(--border)}
+.step{
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:13px 18px;margin-bottom:8px;display:flex;gap:14px;align-items:baseline;
+  font-size:11px;transition:border-color .2s;
+}
+.step:hover{border-color:var(--border2)}
+.step-i{
+  font-size:9px;color:var(--acc);font-weight:600;letter-spacing:.1em;
+  background:rgba(108,99,255,.1);border-radius:3px;padding:2px 8px;min-width:36px;
+  text-align:center;white-space:nowrap;
+}
+.step-i.swap{background:rgba(255,209,102,.1);color:var(--gold)}
+.step-i.div{background:rgba(6,214,160,.1);color:var(--green)}
+.step-i.op{background:rgba(255,99,200,.1);color:var(--acc2)}
+.step-t{color:var(--muted);line-height:1.8;flex:1}
+.step-t em{color:var(--text);font-style:normal}
+.step-t strong{color:var(--green);font-weight:700}
+.step-t .hl{color:var(--gold)}
+
+/* ── CONDENSATION GRID ── */
+.cond-levels{display:flex;flex-direction:column;gap:20px}
+.cond-level{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 22px}
+.cond-level-title{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.cond-level-title span{color:var(--acc)}
+.cond-grid{display:grid;gap:4px}
+.cond-cell{
+  width:68px;height:40px;background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:5px;color:var(--text);font-size:11px;display:flex;align-items:center;
+  justify-content:center;font-family:'JetBrains Mono',monospace;
+}
+.cond-cell.pivot{background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.3);color:var(--acc)}
+.cond-cell.final{background:rgba(6,214,160,.08);border-color:rgba(6,214,160,.25);color:var(--green);font-weight:700}
+
+/* ── FRACTION DISPLAY ── */
+.frac-toggle{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;margin-bottom:20px;cursor:pointer;width:fit-content;
+  font-size:11px;color:var(--muted);transition:all .2s;user-select:none;
+}
+.frac-toggle:hover{border-color:var(--border2);color:var(--text)}
+.frac-toggle .toggle-pill{
+  width:36px;height:20px;background:var(--s3);border-radius:10px;
+  position:relative;transition:background .2s;
+}
+.frac-toggle.on .toggle-pill{background:var(--acc)}
+.frac-toggle .toggle-dot{
+  width:14px;height:14px;background:#fff;border-radius:50%;
+  position:absolute;top:3px;left:3px;transition:left .2s;
+}
+.frac-toggle.on .toggle-dot{left:19px}
+.frac-wrap{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.frac-inner{display:inline-flex;flex-direction:column;align-items:center;line-height:1;font-size:10px}
+.frac-num{border-bottom:1px solid currentColor;padding-bottom:1px;line-height:1.2}
+.frac-den{padding-top:1px;line-height:1.2}
+.frac-int{font-size:12px}
+
+/* ── MATRIX STEP VISUAL ── */
+.mat-step-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;margin-bottom:12px;
+}
+.mat-step-block .msb-label{
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.mat-step-block .msb-op{
+  font-size:9px;padding:2px 10px;border-radius:3px;font-weight:600;letter-spacing:.1em;
+}
+.msb-op.swap{background:rgba(255,209,102,.12);color:var(--gold)}
+.msb-op.elim{background:rgba(255,99,200,.12);color:var(--acc2)}
+.msb-op.scale{background:rgba(6,214,160,.12);color:var(--green)}
+.msb-op.init{background:rgba(108,99,255,.12);color:var(--acc)}
+.mat-step-visual{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.msv-cell{
+  min-width:58px;height:44px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  border:1px solid var(--border);background:rgba(255,255,255,.02);
+  color:var(--text);transition:all .3s;padding:0 6px;
+}
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  border:1px solid var(--border);background:rgba(255,255,255,.02);
+  color:var(--text);transition:all .3s;
+}
+.msv-cell.highlight{background:rgba(108,99,255,.15);border-color:rgba(108,99,255,.5);color:var(--acc)}
+.msv-cell.changed{background:rgba(6,214,160,.1);border-color:rgba(6,214,160,.35);color:var(--green);animation:cellpop .4s ease}
+.msv-cell.pivot-cell{background:rgba(255,209,102,.1);border-color:rgba(255,209,102,.4);color:var(--gold)}
+.msv-cell.zero{color:var(--muted)}
+@keyframes cellpop{0%{transform:scale(.8);opacity:.4}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.mat-step-row{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.row-label{font-size:9px;color:var(--muted);width:22px;text-align:right;flex-shrink:0;letter-spacing:.05em}
+
+/* ── AUGMENTED MATRIX ── */
+.aug-sep{
+  width:2px;background:rgba(108,99,255,.4);align-self:stretch;
+  margin:0 4px;border-radius:2px;
+}
+
+/* ── PROPERTY CARDS ── */
+.prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.prop-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.prop-card .pc-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.prop-card .pc-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--green)}
+.prop-card .pc-val.bad{color:var(--red)}
+.prop-card .pc-val.warn{color:var(--gold)}
+.prop-card .pc-val.acc{color:var(--acc)}
+.prop-card .pc-sub{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* ── EQUAÇÕES MATRICIAIS ── */
+.eq-input-area{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:22px 24px;margin-bottom:20px;
+}
+.eq-input-area label{
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+  display:block;margin-bottom:10px;
+}
+.eq-input-wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eq-input{
+  flex:1;min-width:260px;
+  background:var(--bg);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;
+  padding:12px 16px;outline:none;transition:all .2s;
+}
+.eq-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+.eq-input::placeholder{color:var(--muted);font-size:13px}
+.eq-hint{
+  font-size:10px;color:var(--muted);margin-top:10px;line-height:1.8;
+}
+.eq-hint code{
+  background:var(--s3);border:1px solid var(--border2);border-radius:3px;
+  padding:1px 6px;color:var(--acc2);font-size:10px;
+}
+.eq-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.eq-chip{
+  background:var(--s3);border:1px solid var(--border2);border-radius:5px;
+  padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;
+  transition:all .15s;font-family:'JetBrains Mono',monospace;
+}
+.eq-chip:hover{background:rgba(108,99,255,.12);border-color:rgba(108,99,255,.3);color:var(--acc)}
+
+.eq-matrix-inputs{
+  display:flex;flex-wrap:wrap;gap:20px;margin-bottom:24px;
+}
+.eq-mat-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:16px 18px;
+}
+.eq-mat-block .emb-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+}
+.eq-mat-block .emb-name{
+  font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);
+}
+.eq-mat-block .emb-dim{font-size:10px;color:var(--muted)}
+.emb-dim-row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+
+.eq-parsed-display{
+  background:var(--s1);border:1px solid rgba(108,99,255,.25);border-radius:10px;
+  padding:16px 20px;margin-bottom:20px;font-size:13px;
+}
+.eq-parsed-display .epd-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eq-parsed-display .epd-eq{
+  font-family:'JetBrains Mono',monospace;color:var(--text);font-size:14px;line-height:2;
+}
+.epd-eq .tok-X{color:var(--acc2);font-weight:700}
+.epd-eq .tok-I{color:var(--gold);font-weight:700}
+.epd-eq .tok-mat{color:var(--green)}
+.epd-eq .tok-op{color:var(--muted);margin:0 4px}
+.epd-eq .tok-mod{color:var(--acc);font-size:11px;vertical-align:super}
+
+.eq-step-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;margin-bottom:10px;
+}
+.eq-step-block .esb-label{
+  font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.eq-step-block .esb-eq{
+  font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);line-height:2;
+}
+.esb-eq .tok-X{color:var(--acc2);font-weight:700}
+.esb-eq .tok-I{color:var(--gold)}
+.esb-eq .tok-mat{color:var(--green)}
+.esb-eq .tok-op{color:var(--muted);margin:0 3px}
+.esb-eq .tok-mod{color:var(--acc);font-size:10px;vertical-align:super}
+.esb-eq .tok-new{color:var(--acc);text-decoration:underline;text-underline-offset:3px}
+.esb-op-badge{
+  font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;letter-spacing:.08em;
+}
+.esb-op-badge.rule{background:rgba(108,99,255,.12);color:var(--acc)}
+.esb-op-badge.calc{background:rgba(6,214,160,.12);color:var(--green)}
+.esb-op-badge.done{background:rgba(255,99,200,.12);color:var(--acc2)}
+.esb-op-badge.info{background:rgba(255,209,102,.12);color:var(--gold)}
+
+.eq-result-matrix{
+  background:rgba(6,214,160,.05);border:1px solid rgba(6,214,160,.2);
+  border-radius:12px;padding:20px 24px;margin-top:16px;
+}
+.eq-result-matrix .erm-title{
+  font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+}
+
+/* ── TEORIA ── */
+.teoria-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+.teoria-tab{
+  padding:8px 18px;border-radius:6px;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;
+  background:var(--s1);border:1px solid var(--border);color:var(--muted);
+  user-select:none;
+}
+.teoria-tab:hover{border-color:var(--border2);color:var(--text)}
+.teoria-tab.active{background:rgba(108,99,255,.12);border-color:rgba(108,99,255,.35);color:var(--acc)}
+
+.teoria-panel{display:none}
+.teoria-panel.active{display:block;animation:fadeIn .3s ease}
+
+.teoria-section{margin-bottom:32px}
+.teoria-section h3{
+  font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;
+  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.teoria-section h3::after{content:'';flex:1;height:1px;background:var(--border)}
+.teoria-section p{font-size:12px;color:var(--muted);line-height:1.9;margin-bottom:10px}
+.teoria-section p strong{color:var(--text)}
+.teoria-section ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.teoria-section ul li{
+  font-size:12px;color:var(--muted);line-height:1.7;
+  padding-left:16px;position:relative;
+}
+.teoria-section ul li::before{content:'▸';position:absolute;left:0;color:var(--acc);font-size:10px;top:2px}
+.teoria-section ul li strong{color:var(--text)}
+
+.teoria-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.teoria-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:16px 18px;transition:border-color .2s;
+}
+.teoria-card:hover{border-color:var(--border2)}
+.teoria-card .tc-title{
+  font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;
+  color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;
+}
+.teoria-card .tc-tag{
+  font-size:8px;padding:2px 7px;border-radius:3px;
+  background:rgba(108,99,255,.1);color:var(--acc);border:1px solid rgba(108,99,255,.2);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.teoria-card p{font-size:11px;color:var(--muted);line-height:1.7}
+.teoria-card .tc-mat{
+  margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--green);background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.12);
+  border-radius:6px;padding:8px 12px;line-height:1.8;
+}
+
+.formula-box{
+  background:var(--s1);border:1px solid rgba(108,99,255,.25);border-radius:10px;
+  padding:16px 20px;margin-bottom:12px;
+}
+.formula-box .fb-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.formula-box .fb-formula{
+  font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--acc2);
+  line-height:1.8;
+}
+.formula-box .fb-desc{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7}
+
+.tip-box{
+  background:rgba(255,209,102,.05);border:1px solid rgba(255,209,102,.2);
+  border-radius:8px;padding:12px 16px;margin-top:12px;
+  font-size:11px;color:var(--gold);line-height:1.7;
+}
+.tip-box::before{content:'💡 ';font-size:13px}
+
+.warn-box{
+  background:rgba(239,71,111,.05);border:1px solid rgba(239,71,111,.2);
+  border-radius:8px;padding:12px 16px;margin-top:12px;
+  font-size:11px;color:var(--red);line-height:1.7;
+}
+.warn-box::before{content:'⚠️ ';font-size:13px}
+
+.matrix-display{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  display:inline-block;padding:10px 0;
+}
+.matrix-display .md-row{display:flex;gap:8px;margin-bottom:4px}
+.matrix-display .md-cell{
+  width:44px;height:36px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;
+  color:var(--text);font-size:11px;
+}
+.matrix-display .md-cell.hl{background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.3);color:var(--acc)}
+.matrix-display .md-cell.hl2{background:rgba(6,214,160,.08);border-color:rgba(6,214,160,.25);color:var(--green)}
+.matrix-display .md-cell.zero{color:var(--muted)}
+
+@media(max-width:780px){
+  .sidebar{display:none}
+  .main{padding:24px 16px 60px}
+  .mobile-nav{display:flex!important}
+}
+.mobile-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--s1);border-top:1px solid var(--border);
+  padding:8px 0;gap:0;
+}
+.mobile-nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  cursor:pointer;padding:6px;transition:color .2s;
+}
+.mobile-nav-item .icon{font-size:1.1rem}
+.mobile-nav-item.active{color:var(--acc)}
+a.nav-item{color:var(--muted)}
+a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.nav-item.nav-ext:hover{border-color:rgba(255,209,102,.35)!important;color:var(--gold)!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="tag">v4.0</div>
+    <h1>Matrix<br>Lab</h1>
+    <p>Calculadora de Álgebra Linear</p>
+  </div>
+  <div class="nav-section">Início</div>
+  <div class="nav-item active" onclick="showPage('home')">
+    <div class="icon">🏠</div> Bem-vindo
+  </div>
+  <div class="nav-section">Operações</div>
+  <div class="nav-item" onclick="showPage('mult')">
+    <div class="icon">➕</div> Operações <span class="badge">A±×B</span>
+  </div>
+  <div class="nav-item" onclick="showPage('determinante')">
+    <div class="icon">🔢</div> Determinante <span class="badge">det</span>
+  </div>
+  <div class="nav-item" onclick="showPage('adjunta')">
+    <div class="icon">🔳</div> Adjunta <span class="badge">adj</span>
+  </div>
+  <div class="nav-item" onclick="showPage('gauss')">
+    <div class="icon">🔺</div> Elim. de Gauss <span class="badge">det</span>
+  </div>
+  <div class="nav-item" onclick="showPage('dodgson')">
+    <div class="icon">🔷</div> Condensação <span class="badge">det</span>
+  </div>
+  <div class="nav-item" onclick="showPage('inverse')">
+    <div class="icon">↩️</div> Inversa <span class="badge">A⁻¹</span>
+  </div>
+  <div class="nav-item" onclick="showPage('transpose')">
+    <div class="icon">🔄</div> Transposta <span class="badge">Aᵀ</span>
+  </div>
+  <div class="nav-item" onclick="showPage('power')">
+    <div class="icon">⚡</div> Potência <span class="badge">Aⁿ</span>
+  </div>
+  <div class="nav-item" onclick="showPage('props')">
+    <div class="icon">🔬</div> Propriedades <span class="badge">info</span>
+  </div>
+  <div class="nav-item" onclick="showPage('equacoes')">
+    <div class="icon">🧮</div> Equações <span class="badge">X=?</span>
+  </div>
+  <div class="nav-section">Aprender</div>
+  <div class="nav-item" onclick="showPage('teoria')">
+    <div class="icon">📖</div> Teoria <span class="badge">guia</span>
+  </div>
+  <div class="nav-section">Mais</div>
+  <a class="nav-item" href="sobre.html" style="text-decoration:none">
+    <div class="icon">🧾</div> Sobre
+  </a>
+  <div class="sidebar-footer">
+    <div class="frac-toggle on" id="fracToggle" onclick="toggleFractions()" style="margin-bottom:10px;width:100%;justify-content:space-between">
+      <span>Mostrar frações</span>
+      <div class="toggle-pill"><div class="toggle-dot"></div></div>
+    </div>
+    Álgebra Linear · JS puro
+  </div>
+</aside>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-item active" onclick="showPage('home')"><div class="icon">🏠</div>Início</div>
+  <div class="mobile-nav-item" onclick="showPage('determinante')"><div class="icon">🔢</div>Det.</div>
+  <div class="mobile-nav-item" onclick="showPage('adjunta')"><div class="icon">🔳</div>Adj.</div>
+  <div class="mobile-nav-item" onclick="showPage('mult')"><div class="icon">➕</div>Oper.</div>
+  <div class="mobile-nav-item" onclick="showPage('gauss')"><div class="icon">🔺</div>Gauss</div>
+  <div class="mobile-nav-item" onclick="showPage('inverse')"><div class="icon">↩️</div>Inversa</div>
+  <div class="mobile-nav-item" onclick="showPage('props')"><div class="icon">🔬</div>Props.</div>
+  <div class="mobile-nav-item" onclick="showPage('teoria')"><div class="icon">📖</div>Teoria</div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HOME / BEM-VINDO -->
+<section class="page active" id="page-home">
+  <!-- Hero -->
+  <div style="margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border)">
+    <div style="display:inline-block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);padding:3px 10px;border-radius:2px;margin-bottom:16px">Matrix Lab · v4.0</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:800;line-height:1.05;margin-bottom:14px">
+      Bem-vindo ao<br>
+      <span style="background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Matrix Lab</span>
+    </h2>
+    <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:560px">
+      A tua calculadora de álgebra linear com <strong style="color:var(--text)">passo a passo visual</strong>. Cada operação explica exatamente o que acontece — ideal para estudar, verificar resultados e compreender os métodos.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+      <div style="background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--acc)">✨ Passo a passo detalhado</div>
+      <div style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--green)">½ Frações exatas</div>
+      <div style="background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--gold)">🎲 Matrizes aleatórias</div>
+      <div style="background:rgba(255,99,200,.08);border:1px solid rgba(255,99,200,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--acc2)">🆕 Determinante & Adjunta</div>
+    </div>
+  </div>
+
+  <!-- Como usar -->
+  <div style="margin-bottom:40px">
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      📖 Como usar a app
+      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">1️⃣</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Escolhe uma operação</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Na barra lateral esquerda encontras todas as operações disponíveis — determinante, adjunta, inversa, multiplicação e muito mais.</p>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">2️⃣</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Define a dimensão</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Usa os botões <strong style="color:var(--acc)">+ / −</strong> para ajustar o número de linhas e colunas. A matriz aparece automaticamente.</p>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">3️⃣</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Preenche os valores</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Clica em cada célula e escreve o valor. Podes usar o botão <strong style="color:var(--gold)">Aleatório</strong> para preencher automaticamente com valores de teste.</p>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">4️⃣</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Clica em Calcular</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">O resultado aparece imediatamente, acompanhado de um <strong style="color:var(--green)">passo a passo visual</strong> completo que explica cada operação.</p>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">½</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Frações ou decimais?</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">No rodapé da sidebar podes ativar/desativar a apresentação de resultados em <strong style="color:var(--acc)">frações exatas</strong> (ex: 1/3 em vez de 0.333...).</p>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+        <div style="font-size:1.5rem;margin-bottom:10px">📖</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:6px;color:var(--text)">Secção de Teoria</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Não sabes a teoria? Vai a <strong style="color:var(--acc);cursor:pointer" onclick="showPage('teoria')">Teoria</strong> na sidebar — guia completo com fórmulas, exemplos e propriedades.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Novidades desta versão -->
+  <div style="margin-bottom:40px">
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      🆕 Novidades — v4.0
+      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+      <div style="background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.25);border-radius:10px;padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.3rem">🔢</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--acc)">Determinante com passo a passo</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Secção dedicada ao cálculo do determinante. Para ordem 2 usa o método direto, ordem 3 usa a <strong style="color:var(--text)">Regra de Sarrus</strong>, e ordem 4+ usa a <strong style="color:var(--text)">Expansão de Laplace</strong> com Menores Complementares e Complementos Algébricos.</p>
+        <div style="margin-top:10px"><span onclick="showPage('determinante')" style="cursor:pointer;font-size:10px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase">Abrir →</span></div>
+      </div>
+      <div style="background:rgba(255,99,200,.06);border:1px solid rgba(255,99,200,.25);border-radius:10px;padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.3rem">🔳</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--acc2)">Matriz Adjunta</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.7">Calcula a <strong style="color:var(--text)">matriz adjunta</strong> (transposta da matriz de cofatores). Mostra cada Menor Complementar M<sub>ij</sub>, cada Cofator C<sub>ij</sub> = (−1)^(i+j)·M<sub>ij</sub>, a matriz de cofatores e a adjunta final.</p>
+        <div style="margin-top:10px"><span onclick="showPage('adjunta')" style="cursor:pointer;font-size:10px;color:var(--acc2);letter-spacing:.1em;text-transform:uppercase">Abrir →</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operações disponíveis -->
+  <div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      ⚡ Operações disponíveis
+      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+    <div class="home-grid">
+      <div class="home-card" onclick="showPage('determinante')">
+        <div class="card-icon">🔢</div>
+        <h3>Determinante</h3>
+        <p>Método direto (2×2), Sarrus (3×3) e Laplace com menores e cofatores (4×4+).</p>
+        <span class="card-tag" style="background:rgba(108,99,255,.15);color:var(--acc)">🆕 Novo</span>
+      </div>
+      <div class="home-card" onclick="showPage('adjunta')">
+        <div class="card-icon">🔳</div>
+        <h3>Adjunta</h3>
+        <p>Calcula a adjunta mostrando cada menor complementar e cofator algébrico.</p>
+        <span class="card-tag" style="background:rgba(255,99,200,.15);color:var(--acc2)">🆕 Novo</span>
+      </div>
+      <div class="home-card" onclick="showPage('mult')">
+        <div class="card-icon">➕</div>
+        <h3>Operações Simples</h3>
+        <p>Soma, subtração e multiplicação de matrizes. Encadeia C, D, E... com a operação que escolheres.</p>
+        <span class="card-tag">A + B, A − B, A × B</span>
+      </div>
+      <div class="home-card" onclick="showPage('gauss')">
+        <div class="card-icon">🔺</div>
+        <h3>Eliminação de Gauss</h3>
+        <p>Obtém a forma triangular superior com pivotagem parcial. Calcula o determinante como produto da diagonal.</p>
+        <span class="card-tag">Triangular</span>
+      </div>
+      <div class="home-card" onclick="showPage('dodgson')">
+        <div class="card-icon">🔷</div>
+        <h3>Condensação de Dodgson</h3>
+        <p>Método de Lewis Carroll para calcular determinantes por condensação iterativa.</p>
+        <span class="card-tag">Determinante</span>
+      </div>
+      <div class="home-card" onclick="showPage('inverse')">
+        <div class="card-icon">↩️</div>
+        <h3>Inversa (Gauss-Jordan)</h3>
+        <p>Calcula A⁻¹ pelo método de Gauss-Jordan com a matriz aumentada [A|I].</p>
+        <span class="card-tag">A⁻¹</span>
+      </div>
+      <div class="home-card" onclick="showPage('transpose')">
+        <div class="card-icon">🔄</div>
+        <h3>Transposta</h3>
+        <p>Calcula a transposta Aᵀ trocando linhas por colunas.</p>
+        <span class="card-tag">Aᵀ</span>
+      </div>
+      <div class="home-card" onclick="showPage('power')">
+        <div class="card-icon">⚡</div>
+        <h3>Potência de Matriz</h3>
+        <p>Calcula Aⁿ por multiplicação iterativa. Mostra cada passo intermédio.</p>
+        <span class="card-tag">Aⁿ</span>
+      </div>
+      <div class="home-card" onclick="showPage('props')">
+        <div class="card-icon">🔬</div>
+        <h3>Propriedades</h3>
+        <p>Traço, rank, norma, simetria, diagonal e outras propriedades de uma matriz.</p>
+        <span class="card-tag">Análise</span>
+      </div>
+      <div class="home-card" onclick="showPage('equacoes')">
+        <div class="card-icon">🧮</div>
+        <h3>Equações Matriciais</h3>
+        <p>Resolve equações com X, transposta, inversa e parênteses.</p>
+        <span class="card-tag">X = ?</span>
+      </div>
+      <div class="home-card" onclick="showPage('teoria')">
+        <div class="card-icon">📖</div>
+        <h3>Teoria</h3>
+        <p>Guia completo: notação, tipos de matrizes, operações, determinantes e mais.</p>
+        <span class="card-tag">Aprender</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DETERMINANTE -->
+<section class="page" id="page-determinante">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Determinante</h2>
+    <p>Ordem 2: método direto · Ordem 3: Regra de Sarrus · Ordem 4+: Expansão de Laplace com Menores Complementares e Cofatores.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="detDim(-1)">−</button>
+        <input class="dval" id="detn" value="3" readonly>
+        <button class="dbtn" onclick="detDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+    <div class="dim-card" id="detMethodCard">
+      <label>Método</label>
+      <div id="detMethodLabel" style="font-size:12px;color:var(--acc);font-weight:600;padding-top:4px">Regra de Sarrus</div>
+    </div>
+  </div>
+  <div id="detErr" class="err"></div>
+  <div class="mat-area" id="detMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcDet()">Calcular</button>
+    <button class="btn-rnd" onclick="randDet()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearDet()">Limpar</button>
+  </div>
+  <div id="detResult"></div>
+  <div id="detSteps"></div>
+</section>
+
+<!-- ADJUNTA -->
+<section class="page" id="page-adjunta">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Matriz Adjunta</h2>
+    <p>A adjunta de A é a transposta da matriz de cofatores. Para cada posição (i,j): calcula o Menor Complementar M<sub>ij</sub>, o Cofator C<sub>ij</sub> = (−1)^(i+j)·M<sub>ij</sub>, e depois transpõe.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="adjDim(-1)">−</button>
+        <input class="dval" id="adjn" value="3" readonly>
+        <button class="dbtn" onclick="adjDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+  </div>
+  <div id="adjErr" class="err"></div>
+  <div class="mat-area" id="adjMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcAdj()">Calcular</button>
+    <button class="btn-rnd" onclick="randAdj()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearAdj()">Limpar</button>
+  </div>
+  <div id="adjResult"></div>
+  <div id="adjSteps"></div>
+</section>
+
+<!-- OPERAÇÕES SIMPLES -->
+<section class="page" id="page-mult">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Operações Simples</h2>
+    <p>Soma (A+B), subtração (A−B) e multiplicação (A×B). Podes encadear mais matrizes — C, D, E... — cada uma com a sua operação.</p>
+  </div>
+
+  <!-- Operação global (soma/sub exige dimensões iguais; mult exige cols=linhas) -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
+    <span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Operação padrão:</span>
+    <div style="display:flex;gap:6px">
+      <button id="opBtn_add" class="op-sel-btn active" onclick="setDefaultOp('add')">A + B</button>
+      <button id="opBtn_sub" class="op-sel-btn" onclick="setDefaultOp('sub')">A − B</button>
+      <button id="opBtn_mul" class="op-sel-btn" onclick="setDefaultOp('mul')">A × B</button>
+    </div>
+  </div>
+
+  <!-- Matrix chain container -->
+  <div id="opChainArea"></div>
+
+  <!-- Add matrix button -->
+  <div style="margin:16px 0 20px">
+    <button class="btn-rnd" style="font-size:11px" onclick="opAddMatrix()">+ Adicionar Matriz</button>
+    <button class="btn-secondary" style="margin-left:8px;font-size:11px" onclick="opRemoveMatrix()">− Remover Última</button>
+  </div>
+
+  <div id="opCompat" class="compat"><div class="dot"></div><span id="opCompatText">A verificar...</span></div>
+  <div id="opErr" class="err"></div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="calcOp()">Calcular</button>
+    <button class="btn-rnd" onclick="randOp()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearOp()">Limpar</button>
+  </div>
+  <div id="opResult"></div>
+  <div id="opSteps"></div>
+</section>
+
+<!-- GAUSS -->
+<section class="page" id="page-gauss">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Eliminação de Gauss</h2>
+    <p>Reduz a matriz à forma triangular superior com pivotagem parcial. Calcula o determinante como produto da diagonal principal.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="gDim(-1)">−</button>
+        <input class="dval" id="gn" value="3" readonly>
+        <button class="dbtn" onclick="gDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+  </div>
+  <div id="gErr" class="err"></div>
+  <div class="mat-area" id="gMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcGauss()">Calcular</button>
+    <button class="btn-rnd" onclick="randGauss()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearGauss()">Limpar</button>
+  </div>
+  <div id="gResult"></div>
+  <div id="gSteps"></div>
+</section>
+
+<!-- DODGSON -->
+<section class="page" id="page-dodgson">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Condensação de Dodgson</h2>
+    <p>Método de Lewis Carroll (1866). Condensa a matriz iterativamente calculando determinantes 2×2. Cada nível é dividido pelo nível anterior.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="dDim(-1)">−</button>
+        <input class="dval" id="dn" value="3" readonly>
+        <button class="dbtn" onclick="dDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+  </div>
+  <div id="dErr" class="err"></div>
+  <div class="mat-area" id="dMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcDodgson()">Calcular</button>
+    <button class="btn-rnd" onclick="randDodgson()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearDodgson()">Limpar</button>
+  </div>
+  <div id="dResult"></div>
+</section>
+
+<!-- INVERSA -->
+<section class="page" id="page-inverse">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Inversa — Gauss-Jordan</h2>
+    <p>Cria a matriz aumentada [A|I] e aplica eliminação de Gauss-Jordan até obter [I|A⁻¹].</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="invDim(-1)">−</button>
+        <input class="dval" id="invn" value="3" readonly>
+        <button class="dbtn" onclick="invDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+  </div>
+  <div id="invErr" class="err"></div>
+  <div class="mat-area" id="invMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcInverse()">Calcular</button>
+    <button class="btn-rnd" onclick="randInverse()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearInverse()">Limpar</button>
+  </div>
+  <div id="invResult"></div>
+  <div id="invSteps"></div>
+</section>
+
+<!-- TRANSPOSTA -->
+<section class="page" id="page-transpose">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Transposta Aᵀ</h2>
+    <p>Troca linhas por colunas: o elemento (i,j) de A passa para (j,i) de Aᵀ.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Matriz A</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="trDim('r',-1)">−</button>
+        <input class="dval" id="trr" value="2" readonly>
+        <button class="dbtn" onclick="trDim('r',1)">+</button>
+        <span>×</span>
+        <button class="dbtn" onclick="trDim('c',-1)">−</button>
+        <input class="dval" id="trc" value="3" readonly>
+        <button class="dbtn" onclick="trDim('c',1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="mat-area" id="trMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcTranspose()">Calcular</button>
+    <button class="btn-rnd" onclick="randTranspose()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearTranspose()">Limpar</button>
+  </div>
+  <div id="trResult"></div>
+</section>
+
+<!-- POTÊNCIA -->
+<section class="page" id="page-power">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Potência Aⁿ</h2>
+    <p>Calcula A elevado à potência n por multiplicação iterativa. A deve ser quadrada.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="pwDim(-1)">−</button>
+        <input class="dval" id="pwn" value="2" readonly>
+        <button class="dbtn" onclick="pwDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Expoente</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="pwExp(-1)">−</button>
+        <input class="dval" id="pwe" value="2" readonly>
+        <button class="dbtn" onclick="pwExp(1)">+</button>
+        <span style="font-size:10px;color:var(--muted)">máx 8</span>
+      </div>
+    </div>
+  </div>
+  <div id="pwErr" class="err"></div>
+  <div class="mat-area" id="pwMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcPower()">Calcular</button>
+    <button class="btn-rnd" onclick="randPower()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearPower()">Limpar</button>
+  </div>
+  <div id="pwResult"></div>
+  <div id="pwSteps"></div>
+</section>
+
+<!-- PROPRIEDADES -->
+<section class="page" id="page-props">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Propriedades da Matriz</h2>
+    <p>Calcula o traço, norma de Frobenius, rank (eliminação de Gauss), simetria, diagonal, e mais.</p>
+  </div>
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Linhas</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="prDim('r',-1)">−</button>
+        <input class="dval" id="prr" value="3" readonly>
+        <button class="dbtn" onclick="prDim('r',1)">+</button>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Colunas</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="prDim('c',-1)">−</button>
+        <input class="dval" id="prc" value="3" readonly>
+        <button class="dbtn" onclick="prDim('c',1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div id="prErr" class="err"></div>
+  <div class="mat-area" id="prMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcProps()">Analisar</button>
+    <button class="btn-rnd" onclick="randProps()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearProps()">Limpar</button>
+  </div>
+  <div id="prResult"></div>
+</section>
+
+<!-- EQUAÇÕES MATRICIAIS -->
+<section class="page" id="page-equacoes">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Equações Matriciais</h2>
+    <p>Escreve a equação, define as matrizes conhecidas e o programa isola X passo a passo.</p>
+  </div>
+
+  <!-- INPUT DA EQUAÇÃO -->
+  <div class="eq-input-area">
+    <label>Equação (escreve usando A, B, C... para matrizes conhecidas, X para a incógnita, I para identidade)</label>
+    <div class="eq-input-wrap">
+      <input class="eq-input" id="eqInput" placeholder="Ex: A*X*B = C  ou  X*A' + B = C  ou  (A+B)*X = C" oninput="eqPreview()">
+      <button class="btn-primary" onclick="solveEquation()">Resolver</button>
+      <button class="btn-secondary" onclick="clearEquation()">Limpar</button>
+    </div>
+    <div class="eq-hint">
+      Notação: <code>*</code> multiplicação &nbsp;·&nbsp; <code>+</code> adição &nbsp;·&nbsp; <code>-</code> subtração &nbsp;·&nbsp;
+      <code>A'</code> ou <code>A^T</code> transposta &nbsp;·&nbsp; <code>A^-1</code> ou <code>inv(A)</code> inversa &nbsp;·&nbsp;
+      <code>(A+B)*X</code> parênteses &nbsp;·&nbsp; <code>X</code> incógnita &nbsp;·&nbsp; <code>I</code> identidade
+    </div>
+    <div class="eq-chips">
+      <div class="eq-chip" onclick="eqInsert('A*X = B')">A·X = B</div>
+      <div class="eq-chip" onclick="eqInsert('X*A = B')">X·A = B</div>
+      <div class="eq-chip" onclick="eqInsert('A*X*B = C')">A·X·B = C</div>
+      <div class="eq-chip" onclick="eqInsert('A*X + B = C')">A·X + B = C</div>
+      <div class="eq-chip" onclick="eqInsert('X + A = B')">X + A = B</div>
+      <div class="eq-chip" onclick="eqInsert('A\'*X = B')">Aᵀ·X = B</div>
+      <div class="eq-chip" onclick="eqInsert('(A+B)*X = C')">(A+B)·X = C</div>
+      <div class="eq-chip" onclick="eqInsert('A*X*A\' = B')">A·X·Aᵀ = B</div>
+    </div>
+  </div>
+
+  <!-- PREVIEW DA EQUAÇÃO PARSEADA -->
+  <div class="eq-parsed-display" id="eqParsed" style="display:none">
+    <div class="epd-label">Equação reconhecida</div>
+    <div class="epd-eq" id="eqParsedEq"></div>
+  </div>
+
+  <div id="eqErr" class="err"></div>
+
+  <!-- INPUTS DAS MATRIZES -->
+  <div id="eqMatInputs"></div>
+
+  <!-- PASSOS E RESULTADO -->
+  <div id="eqSteps"></div>
+  <div id="eqResult"></div>
+</section>
+
+<!-- TEORIA -->
+<section class="page" id="page-teoria">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Teoria de Matrizes</h2>
+    <p>Guia completo de álgebra linear — do básico aos métodos avançados.</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="teoria-tabs">
+    <div class="teoria-tab active" onclick="teoriaTab('definicao')">📐 Definição & Notação</div>
+    <div class="teoria-tab" onclick="teoriaTab('classificacao')">🗂️ Classificação</div>
+    <div class="teoria-tab" onclick="teoriaTab('operacoes')">➕ Operações</div>
+    <div class="teoria-tab" onclick="teoriaTab('determinante')">🔢 Determinante</div>
+    <div class="teoria-tab" onclick="teoriaTab('sistemas')">🔗 Sistemas Lineares</div>
+    <div class="teoria-tab" onclick="teoriaTab('propriedades')">⚗️ Propriedades Especiais</div>
+  </div>
+
+  <!-- PANEL: DEFINIÇÃO -->
+  <div class="teoria-panel active" id="tpanel-definicao">
+    <div class="teoria-section">
+      <h3>O que é uma Matriz?</h3>
+      <p>Uma <strong>matriz</strong> é uma tabela retangular de números (ou símbolos) organizados em <strong>linhas</strong> e <strong>colunas</strong>. Uma matriz com <em>m</em> linhas e <em>n</em> colunas chama-se matriz <strong>m×n</strong>.</p>
+      <div class="formula-box">
+        <div class="fb-label">Notação geral</div>
+        <div class="fb-formula">A = [aᵢⱼ]   onde i = 1..m (linha), j = 1..n (coluna)</div>
+        <div class="fb-desc">aᵢⱼ representa o elemento na linha i e coluna j.</div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Exemplo Visual</h3>
+      <p>Matriz A de dimensão <strong>3×3</strong> — cada célula tem o seu índice [linha, coluna]:</p>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:8px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.1em">Índices [i,j]</div>
+          <div class="matrix-display">
+            <div class="md-row"><div class="md-cell hl">1,1</div><div class="md-cell">1,2</div><div class="md-cell">1,3</div></div>
+            <div class="md-row"><div class="md-cell">2,1</div><div class="md-cell hl">2,2</div><div class="md-cell">2,3</div></div>
+            <div class="md-row"><div class="md-cell">3,1</div><div class="md-cell">3,2</div><div class="md-cell hl">3,3</div></div>
+          </div>
+          <div style="font-size:10px;color:var(--acc);margin-top:6px">↑ diagonal principal destacada</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.1em">Exemplo concreto</div>
+          <div class="matrix-display">
+            <div class="md-row"><div class="md-cell">2</div><div class="md-cell">-1</div><div class="md-cell">4</div></div>
+            <div class="md-row"><div class="md-cell">0</div><div class="md-cell">3</div><div class="md-cell">-2</div></div>
+            <div class="md-row"><div class="md-cell">5</div><div class="md-cell">1</div><div class="md-cell">7</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Terminologia Essencial</h3>
+      <ul>
+        <li><strong>Dimensão / Ordem:</strong> dada por m×n (linhas × colunas). Ex: 3×4 tem 3 linhas e 4 colunas.</li>
+        <li><strong>Elemento aᵢⱼ:</strong> valor na linha i, coluna j. Em A = [[1,2],[3,4]], a₁₂ = 2.</li>
+        <li><strong>Diagonal principal:</strong> elementos a₁₁, a₂₂, ..., aₙₙ (só em matrizes quadradas).</li>
+        <li><strong>Diagonal secundária:</strong> elementos a₁ₙ, a₂,ₙ₋₁, ..., aₙ₁.</li>
+        <li><strong>Traço (tr A):</strong> soma dos elementos da diagonal principal.</li>
+        <li><strong>Submatriz:</strong> matriz obtida removendo linhas e/ou colunas de A.</li>
+        <li><strong>Menor:</strong> determinante de uma submatriz quadrada de A.</li>
+      </ul>
+      <div class="tip-box">A notação aᵢⱼ usa sempre primeiro a linha e depois a coluna — pensa em "ir à linha primeiro, depois à coluna" como num mapa de coordenadas.</div>
+    </div>
+  </div>
+
+  <!-- PANEL: CLASSIFICAÇÃO -->
+  <div class="teoria-panel" id="tpanel-classificacao">
+    <div class="teoria-section">
+      <h3>Por Forma / Dimensão</h3>
+      <div class="teoria-grid">
+        <div class="teoria-card">
+          <div class="tc-title">Matriz Linha <span class="tc-tag">1×n</span></div>
+          <p>Tem apenas 1 linha e n colunas.</p>
+          <div class="tc-mat">[ 3  −1  5  2 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Matriz Coluna <span class="tc-tag">m×1</span></div>
+          <p>Tem m linhas e apenas 1 coluna.</p>
+          <div class="tc-mat">[ 4 ]<br>[ 7 ]<br>[ −2 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Matriz Retangular <span class="tc-tag">m×n, m≠n</span></div>
+          <p>Número de linhas diferente do número de colunas.</p>
+          <div class="tc-mat">[ 1  2  3 ]<br>[ 4  5  6 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Matriz Quadrada <span class="tc-tag">n×n</span></div>
+          <p>Mesmo número de linhas e colunas. Base da maioria das propriedades avançadas.</p>
+          <div class="tc-mat">[ 1  2 ]<br>[ 3  4 ]</div>
+        </div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Tipos Especiais de Matrizes Quadradas</h3>
+      <div class="teoria-grid">
+        <div class="teoria-card">
+          <div class="tc-title">Diagonal <span class="tc-tag">aᵢⱼ=0 se i≠j</span></div>
+          <p>Todos os elementos fora da diagonal principal são zero.</p>
+          <div class="tc-mat">[ 3  0  0 ]<br>[ 0  7  0 ]<br>[ 0  0  2 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Escalar <span class="tc-tag">D = k·I</span></div>
+          <p>Matriz diagonal onde todos os elementos da diagonal são iguais.</p>
+          <div class="tc-mat">[ 5  0  0 ]<br>[ 0  5  0 ]<br>[ 0  0  5 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Identidade (I) <span class="tc-tag">aᵢᵢ=1</span></div>
+          <p>Diagonal com 1s, resto zeros. Elemento neutro da multiplicação: A·I = I·A = A.</p>
+          <div class="tc-mat">[ 1  0  0 ]<br>[ 0  1  0 ]<br>[ 0  0  1 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Nula (0) <span class="tc-tag">aᵢⱼ=0</span></div>
+          <p>Todos os elementos são zero. Elemento neutro da adição.</p>
+          <div class="tc-mat">[ 0  0  0 ]<br>[ 0  0  0 ]<br>[ 0  0  0 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Triangular Superior <span class="tc-tag">aᵢⱼ=0 se i>j</span></div>
+          <p>Todos os elementos abaixo da diagonal principal são zero.</p>
+          <div class="tc-mat">[ 2  3  1 ]<br>[ 0  5  4 ]<br>[ 0  0  7 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Triangular Inferior <span class="tc-tag">aᵢⱼ=0 se i&lt;j</span></div>
+          <p>Todos os elementos acima da diagonal principal são zero.</p>
+          <div class="tc-mat">[ 2  0  0 ]<br>[ 3  5  0 ]<br>[ 1  4  7 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Simétrica <span class="tc-tag">A = Aᵀ</span></div>
+          <p>Simétrica em relação à diagonal: aᵢⱼ = aⱼᵢ para todo i,j.</p>
+          <div class="tc-mat">[ 1  2  3 ]<br>[ 2  5  4 ]<br>[ 3  4  9 ]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Anti-simétrica <span class="tc-tag">A = −Aᵀ</span></div>
+          <p>aᵢⱼ = −aⱼᵢ. Implica que a diagonal principal é sempre zero.</p>
+          <div class="tc-mat">[ 0  2  −3]<br>[-2  0   4]<br>[ 3 -4   0]</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Ortogonal <span class="tc-tag">A·Aᵀ = I</span></div>
+          <p>As colunas (e linhas) formam uma base ortonormal. A⁻¹ = Aᵀ.</p>
+          <div class="tc-mat">Rotações, reflexões...</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Idempotente <span class="tc-tag">A² = A</span></div>
+          <p>A multiplicada por ela mesma dá a mesma matriz. Usada em projeções.</p>
+          <div class="tc-mat">A·A = A</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Involutória <span class="tc-tag">A² = I</span></div>
+          <p>A sua própria inversa: A⁻¹ = A.</p>
+          <div class="tc-mat">A·A = I</div>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Nilpotente <span class="tc-tag">Aᵏ = 0</span></div>
+          <p>Existe k tal que a potência k da matriz é a matriz nula.</p>
+          <div class="tc-mat">Aᵏ = 0 para algum k</div>
+        </div>
+      </div>
+      <div class="tip-box">A matriz identidade é simultaneamente diagonal, escalar, simétrica, ortogonal, idempotente e involutória — é o exemplo mais "rico" em propriedades.</div>
+    </div>
+  </div>
+
+  <!-- PANEL: OPERAÇÕES -->
+  <div class="teoria-panel" id="tpanel-operacoes">
+    <div class="teoria-section">
+      <h3>Adição e Subtração</h3>
+      <p>Só é possível entre matrizes de <strong>mesma dimensão</strong>. Soma-se elemento a elemento.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição</div>
+        <div class="fb-formula">(A + B)ᵢⱼ = aᵢⱼ + bᵢⱼ</div>
+        <div class="fb-desc">Comutativa: A+B = B+A &nbsp;|&nbsp; Associativa: (A+B)+C = A+(B+C)</div>
+      </div>
+      <div class="warn-box">Não é possível somar matrizes de dimensões diferentes. A soma de uma 2×3 com uma 3×2 é indefinida.</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Multiplicação por Escalar</h3>
+      <p>Multiplica cada elemento da matriz pelo número (escalar) k.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição</div>
+        <div class="fb-formula">(k·A)ᵢⱼ = k · aᵢⱼ</div>
+        <div class="fb-desc">Distributiva: k(A+B) = kA+kB &nbsp;|&nbsp; (k+m)A = kA+mA</div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Multiplicação de Matrizes</h3>
+      <p>Para multiplicar A (m×<strong>p</strong>) por B (<strong>p</strong>×n), o número de <strong>colunas de A</strong> tem de ser igual ao número de <strong>linhas de B</strong>. O resultado C tem dimensão <strong>m×n</strong>.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição</div>
+        <div class="fb-formula">cᵢⱼ = Σₖ aᵢₖ · bₖⱼ &nbsp;(k de 1 a p)</div>
+        <div class="fb-desc">Cada elemento cᵢⱼ é o produto escalar da linha i de A pela coluna j de B.</div>
+      </div>
+      <div class="warn-box">A multiplicação NÃO é comutativa! Em geral, A·B ≠ B·A. Mas é associativa: (A·B)·C = A·(B·C).</div>
+      <div class="tip-box">Regra prática: (m×p) · (p×n) = (m×n). As dimensões "internas" cancelam-se e ficam as "externas".</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Transposta</h3>
+      <p>A transposta Aᵀ troca linhas por colunas: a linha i de A torna-se a coluna i de Aᵀ.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição</div>
+        <div class="fb-formula">(Aᵀ)ᵢⱼ = aⱼᵢ</div>
+        <div class="fb-desc">(A+B)ᵀ = Aᵀ+Bᵀ &nbsp;|&nbsp; (A·B)ᵀ = Bᵀ·Aᵀ &nbsp;|&nbsp; (Aᵀ)ᵀ = A</div>
+      </div>
+      <div class="tip-box">Nota que na transposta do produto, a ordem inverte: (A·B)ᵀ = Bᵀ·Aᵀ. Este é um erro comum!</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Inversa</h3>
+      <p>A inversa A⁻¹ de uma matriz quadrada A existe se e só se <strong>det(A) ≠ 0</strong> (matriz não-singular). Verifica: A·A⁻¹ = A⁻¹·A = I.</p>
+      <div class="formula-box">
+        <div class="fb-label">Para matrizes 2×2</div>
+        <div class="fb-formula">A⁻¹ = (1/det A) · [ d  −b ]<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ −c   a ]</div>
+        <div class="fb-desc">onde A = [[a,b],[c,d]] e det A = ad − bc</div>
+      </div>
+      <div class="formula-box">
+        <div class="fb-label">Para matrizes n×n — Método de Gauss-Jordan</div>
+        <div class="fb-formula">[A | I] → operações elementares → [I | A⁻¹]</div>
+        <div class="fb-desc">Forma a matriz aumentada e aplica eliminação de Gauss-Jordan.</div>
+      </div>
+      <ul>
+        <li><strong>(A·B)⁻¹ = B⁻¹·A⁻¹</strong> — a ordem inverte (igual à transposta).</li>
+        <li><strong>(Aᵀ)⁻¹ = (A⁻¹)ᵀ</strong> — transposta da inversa = inversa da transposta.</li>
+        <li><strong>det(A⁻¹) = 1/det(A)</strong></li>
+      </ul>
+    </div>
+    <div class="teoria-section">
+      <h3>Potência de Matrizes</h3>
+      <p>Só definida para matrizes <strong>quadradas</strong>. Aⁿ = A·A·...·A (n vezes).</p>
+      <ul>
+        <li><strong>A⁰ = I</strong> (convenção)</li>
+        <li><strong>A⁻ⁿ = (A⁻¹)ⁿ</strong> (potências negativas usam a inversa)</li>
+        <li><strong>Aᵐ·Aⁿ = Aᵐ⁺ⁿ</strong></li>
+        <li><strong>(Aᵐ)ⁿ = Aᵐⁿ</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PANEL: DETERMINANTE -->
+  <div class="teoria-panel" id="tpanel-determinante">
+
+    <!-- O que é -->
+    <div class="teoria-section">
+      <h3>O que é o Determinante?</h3>
+      <p>O determinante é um <strong>número escalar</strong> associado a qualquer matriz quadrada. Geometricamente, representa o <strong>fator de escala de área (2D) ou volume (3D)</strong> da transformação linear definida pela matriz.</p>
+      <ul>
+        <li>det(A) = 0 → matriz <strong>singular</strong> (não tem inversa; as linhas são linearmente dependentes — pelo menos uma linha é combinação linear das outras)</li>
+        <li>det(A) ≠ 0 → matriz <strong>não-singular / invertível</strong> (tem inversa; o sistema A·x = b tem solução única)</li>
+        <li>|det(A)| = fator pelo qual a transformação escala áreas ou volumes</li>
+        <li>det(A) &lt; 0 → a transformação <strong>inverte a orientação</strong> (reflexão)</li>
+      </ul>
+      <div class="tip-box">Pensa assim: se pegarmos num quadrado de área 1 e o transformarmos com A, a área resultante é |det(A)|. Se det = 0, o quadrado "achata" numa linha — perde uma dimensão e deixa de ter área.</div>
+    </div>
+
+    <!-- 1×1 e 2×2 -->
+    <div class="teoria-section">
+      <h3>Casos Base: Ordem 1×1 e 2×2</h3>
+      <div class="formula-box">
+        <div class="fb-label">Matriz 1×1</div>
+        <div class="fb-formula">det([a]) = a</div>
+        <div class="fb-desc">O determinante de uma matriz com um só elemento é esse elemento.</div>
+      </div>
+      <div class="formula-box">
+        <div class="fb-label">Matriz 2×2</div>
+        <div class="fb-formula">A = [ a  b ]    det(A) = ad − bc
+    [ c  d ]</div>
+        <div class="fb-desc">Multiplica a diagonal principal (↘) e subtrai o produto da diagonal secundária (↗). É a fórmula mais fundamental de todas.</div>
+      </div>
+      <p style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.8">
+        <strong style="color:var(--text)">Exemplo:</strong> A = [[3, 2], [1, 4]] → det(A) = 3·4 − 2·1 = 12 − 2 = <strong style="color:var(--green)">10</strong>
+      </p>
+    </div>
+
+    <!-- SARRUS -->
+    <div class="teoria-section">
+      <h3>Regra de Sarrus — Ordem 3×3</h3>
+      <p>A Regra de Sarrus é um <strong>mnemónico visual</strong> para calcular o determinante de matrizes 3×3. Foi proposta pelo matemático francês Pierre Frédéric Sarrus em 1833. <strong>Atenção: só funciona para 3×3!</strong></p>
+
+      <div class="formula-box">
+        <div class="fb-label">Fórmula geral 3×3</div>
+        <div class="fb-formula">    [ a  b  c ]
+A = [ d  e  f ]
+    [ g  h  i ]
+
+det(A) = (aei + bfg + cdh) − (ceg + afh + bdi)</div>
+        <div class="fb-desc">Soma dos 3 produtos de diagonais "para baixo" (↘) menos a soma dos 3 produtos de diagonais "para cima" (↗).</div>
+      </div>
+
+      <p style="font-size:11px;color:var(--muted);line-height:1.9;margin-top:14px"><strong style="color:var(--text)">Como aplicar o método visual:</strong></p>
+      <ol style="font-size:11px;color:var(--muted);line-height:2.1;padding-left:20px;margin-top:6px">
+        <li>Escreve a matriz 3×3 normalmente.</li>
+        <li><strong style="color:var(--text)">Repete as duas primeiras colunas</strong> à direita da matriz (fica uma grelha 3×5).</li>
+        <li>Soma os produtos das <strong style="color:var(--green)">3 diagonais que descem da esquerda para a direita</strong> (↘): a·e·i, b·f·g, c·d·h.</li>
+        <li>Subtrai os produtos das <strong style="color:var(--red)">3 diagonais que sobem da esquerda para a direita</strong> (↗): c·e·g, a·f·h, b·d·i.</li>
+      </ol>
+
+      <div style="background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:18px 20px;margin-top:14px;font-size:11px;line-height:2.1;color:var(--muted)">
+        <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--acc);margin-bottom:10px">Exemplo numérico</div>
+        <div style="font-family:'JetBrains Mono',monospace">
+          A = [ 1  2  3 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 4  5  6 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 7  8  9 ]
+        </div>
+        <div style="margin-top:10px">
+          <span style="color:var(--green)">Diagonais ↘:</span><br>
+          &nbsp;&nbsp;1·5·9 = 45<br>
+          &nbsp;&nbsp;2·6·7 = 84<br>
+          &nbsp;&nbsp;3·4·8 = 96<br>
+          &nbsp;&nbsp;Soma = <strong style="color:var(--green)">225</strong>
+        </div>
+        <div style="margin-top:8px">
+          <span style="color:var(--red)">Diagonais ↗:</span><br>
+          &nbsp;&nbsp;3·5·7 = 105<br>
+          &nbsp;&nbsp;1·6·8 = 48<br>
+          &nbsp;&nbsp;2·4·9 = 72<br>
+          &nbsp;&nbsp;Soma = <strong style="color:var(--red)">225</strong>
+        </div>
+        <div style="margin-top:8px">
+          det(A) = 225 − 225 = <strong style="color:var(--text)">0</strong> (as linhas são linearmente dependentes — a linha 3 é L1 + 2·(L2−L1))
+        </div>
+      </div>
+
+      <div class="warn-box" style="margin-top:14px">⚠️ A Regra de Sarrus <strong>NÃO se generaliza</strong> para ordens superiores a 3. Para 4×4 ou maior, é obrigatório usar a Expansão de Laplace ou outro método.</div>
+    </div>
+
+    <!-- LAPLACE -->
+    <div class="teoria-section">
+      <h3>Expansão de Laplace (Cofatores) — Qualquer Ordem</h3>
+      <p>A Expansão de Laplace, também chamada <strong>desenvolvimento por cofatores</strong>, é o método geral para calcular determinantes de qualquer ordem. Foi formalizada pelo matemático francês Pierre-Simon Laplace no século XVIII.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--muted);line-height:1.8">A ideia central é <strong style="color:var(--text)">reduzir um determinante de ordem n ao cálculo de n determinantes de ordem n−1</strong>, e estes a n−1 de ordem n−2, e assim recursivamente até chegar a determinantes 2×2 que sabemos calcular diretamente.</p>
+
+      <div class="formula-box" style="margin-top:14px">
+        <div class="fb-label">Definições essenciais</div>
+        <div class="fb-formula">Menor complementar Mᵢⱼ = det(submatriz sem linha i e coluna j)
+
+Cofator Cᵢⱼ = (−1)^(i+j) · Mᵢⱼ
+
+Expansão pela linha i:
+det(A) = aᵢ₁·Cᵢ₁ + aᵢ₂·Cᵢ₂ + ... + aᵢₙ·Cᵢₙ
+
+Expansão pela coluna j:
+det(A) = a₁ⱼ·C₁ⱼ + a₂ⱼ·C₂ⱼ + ... + aₙⱼ·Cₙⱼ</div>
+        <div class="fb-desc">Podes expandir por qualquer linha ou coluna — o resultado é sempre o mesmo! Escolhe a que tiver mais zeros para simplificar o cálculo.</div>
+      </div>
+
+      <div style="background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:18px 20px;margin-top:14px">
+        <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--acc2);margin-bottom:10px">Grelha de sinais (−1)^(i+j)</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px">O fator de sinal alterna como um tabuleiro de xadrez. Para uma matriz 3×3:</p>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);line-height:2;background:var(--s3);border-radius:6px;padding:12px 16px;display:inline-block">
+          [ +  −  + ]<br>
+          [ −  +  − ]<br>
+          [ +  −  + ]
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px">Para qualquer n×n: posição (i,j) tem sinal + se i+j for par, sinal − se i+j for ímpar.</p>
+      </div>
+
+      <div style="background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:18px 20px;margin-top:14px;font-size:11px;color:var(--muted);line-height:2">
+        <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--acc2);margin-bottom:10px">Exemplo: det de matriz 3×3 pela linha 1</div>
+        <div style="font-family:'JetBrains Mono',monospace">
+          A = [ 2  1  3 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 0  4  1 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 5  2  6 ]
+        </div>
+        <div style="margin-top:12px">
+          <strong style="color:var(--text)">Expansão pela linha 1:</strong><br>
+          det(A) = a₁₁·C₁₁ + a₁₂·C₁₂ + a₁₃·C₁₃<br><br>
+
+          <strong style="color:var(--green)">C₁₁ = (+1) · det([[4,1],[2,6]])</strong> = +(4·6 − 1·2) = +22<br>
+          Contribuição: 2 · 22 = <strong>44</strong><br><br>
+
+          <strong style="color:var(--red)">C₁₂ = (−1) · det([[0,1],[5,6]])</strong> = −(0·6 − 1·5) = −(−5) = +5<br>
+          Contribuição: 1 · 5 = <strong>5</strong><br><br>
+
+          <strong style="color:var(--green)">C₁₃ = (+1) · det([[0,4],[5,2]])</strong> = +(0·2 − 4·5) = −20<br>
+          Contribuição: 3 · (−20) = <strong>−60</strong><br><br>
+
+          det(A) = 44 + 5 + (−60) = <strong style="color:var(--text);font-size:14px">−11</strong>
+        </div>
+      </div>
+
+      <div style="background:var(--s2);border:1px solid rgba(108,99,255,.25);border-radius:10px;padding:18px 20px;margin-top:14px;font-size:11px;color:var(--muted);line-height:2">
+        <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--acc);margin-bottom:10px">Estratégia: escolhe a linha/coluna com mais zeros</div>
+        <p>Considera a matriz:</p>
+        <div style="font-family:'JetBrains Mono',monospace">
+          B = [ 3  0  0  2 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 0  5  0  0 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 1  0  4  0 ]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;[ 0  0  2  7 ]
+        </div>
+        <p style="margin-top:8px">A linha 2 tem três zeros — expandir por ela significa calcular apenas <strong style="color:var(--text)">1 cofator</strong> em vez de 4:<br>
+        det(B) = 5 · C₂₂ + 0 + 0 + 0 = 5 · C₂₂<br>
+        Isto reduz imenso o trabalho!
+        </p>
+      </div>
+
+      <div class="tip-box" style="margin-top:14px">💡 <strong>Resumo prático:</strong> Para matrizes 2×2 usa a fórmula direta. Para 3×3 usa Sarrus ou Laplace. Para 4×4 e maior, usa sempre Laplace (ou Eliminação de Gauss, que é mais eficiente computacionalmente). Nesta app, a secção Determinante mostra automaticamente Sarrus para 3×3 e Laplace para 4×4+.</div>
+    </div>
+
+    <!-- Eliminação de Gauss para det -->
+    <div class="teoria-section">
+      <h3>Determinante por Eliminação de Gauss</h3>
+      <p>Para matrizes grandes, o método mais eficiente é usar a <strong>Eliminação de Gauss</strong> para transformar A numa matriz triangular superior U, e depois multiplicar a diagonal.</p>
+      <div class="formula-box">
+        <div class="fb-label">Fórmula</div>
+        <div class="fb-formula">det(A) = (−1)^s · u₁₁ · u₂₂ · · · uₙₙ</div>
+        <div class="fb-desc">s = número de trocas de linhas durante a eliminação. Se não houve trocas, s = 0 e o fator é +1. Cada troca de linhas multiplica o determinante por −1.</div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.8;margin-top:8px"><strong style="color:var(--text)">Porquê funciona?</strong> As operações do tipo III (somar múltiplo de uma linha a outra) não alteram o determinante. As operações do tipo I (troca de linhas) multiplicam o det por −1. Portanto, após a eliminação, basta contar as trocas e multiplicar a diagonal de U.</p>
+    </div>
+
+    <!-- Propriedades -->
+    <div class="teoria-section">
+      <h3>Propriedades do Determinante</h3>
+      <ul>
+        <li><strong>det(I) = 1</strong> — a identidade tem determinante 1</li>
+        <li><strong>det(Aᵀ) = det(A)</strong> — a transposta não altera o determinante</li>
+        <li><strong>det(A·B) = det(A) · det(B)</strong> — multiplicatividade</li>
+        <li><strong>det(kA) = kⁿ · det(A)</strong> — para matriz n×n, cada linha é multiplicada por k</li>
+        <li><strong>det(A⁻¹) = 1/det(A)</strong> — pois det(A)·det(A⁻¹) = det(I) = 1</li>
+        <li>Trocar duas linhas <strong>muda o sinal</strong> do determinante</li>
+        <li>Se duas linhas forem <strong>iguais ou proporcionais</strong>, det = 0</li>
+        <li>Multiplicar uma linha por k <strong>multiplica det por k</strong></li>
+        <li>Somar o múltiplo de uma linha a outra <strong>não altera det</strong></li>
+        <li>Se uma linha for <strong>toda zeros</strong>, det = 0</li>
+      </ul>
+      <div class="tip-box">det(A·B) = det(A)·det(B) é muito útil: det(A²) = det(A)², det(A³) = det(A)³, etc. E se A for ortogonal (Aᵀ = A⁻¹), então det(A) = ±1.</div>
+    </div>
+
+    <!-- Dodgson -->
+    <div class="teoria-section">
+      <h3>Condensação de Dodgson</h3>
+      <p>Método inventado por Lewis Carroll (Charles Dodgson, autor de Alice no País das Maravilhas!) em 1866. Calcula o determinante por <strong>condensação iterativa</strong>, reduzindo a matriz passo a passo usando determinantes 2×2.</p>
+      <div class="formula-box">
+        <div class="fb-label">Fórmula de condensação</div>
+        <div class="fb-formula">M^(k+1)ᵢⱼ = (M^k_ᵢⱼ · M^k_ᵢ₊₁,ⱼ₊₁ − M^k_ᵢ,ⱼ₊₁ · M^k_ᵢ₊₁,ⱼ) / M^(k-1)_ᵢ₊₁,ⱼ₊₁</div>
+        <div class="fb-desc">A cada iteração, a matriz (n×n) reduz para (n−1)×(n−1). O denominador é o elemento interior da iteração anterior. Falha se algum elemento interior for zero (requer perturbação ou troca de linhas).</div>
+      </div>
+      <div class="warn-box">⚠️ A Condensação de Dodgson requer cuidado quando surgem zeros nos elementos interiores. Nesse caso é necessário reorganizar a matriz antes de continuar.</div>
+    </div>
+
+  </div>
+
+  <!-- PANEL: SISTEMAS LINEARES -->
+  <div class="teoria-panel" id="tpanel-sistemas">
+    <div class="teoria-section">
+      <h3>Representação Matricial</h3>
+      <p>Um sistema de equações lineares pode ser escrito de forma compacta como <strong>A·x = b</strong>, onde A é a matriz dos coeficientes, x o vetor incógnita e b o vetor dos termos independentes.</p>
+      <div class="formula-box">
+        <div class="fb-label">Sistema → Forma matricial</div>
+        <div class="fb-formula">2x + 3y = 7      [ 2  3 ] [x]   [7]<br>x − y  = 1  →   [ 1 -1 ] [y] = [1]<br><br>A · x = b</div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Classificação dos Sistemas (Teorema de Rouché-Capelli)</h3>
+      <ul>
+        <li><strong>Sistema Possível e Determinado (SPD):</strong> rank(A) = rank(A|b) = n → uma solução única.</li>
+        <li><strong>Sistema Possível e Indeterminado (SPI):</strong> rank(A) = rank(A|b) &lt; n → infinitas soluções (n − rank graus de liberdade).</li>
+        <li><strong>Sistema Impossível (SI):</strong> rank(A) ≠ rank(A|b) → sem solução.</li>
+      </ul>
+      <div class="tip-box">Para verificar: forma a matriz aumentada [A|b] e calcula o rank. Se rank(A) = rank(A|b) = n, o sistema tem solução única dada por x = A⁻¹·b.</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Métodos de Resolução</h3>
+      <div class="teoria-grid">
+        <div class="teoria-card">
+          <div class="tc-title">Eliminação de Gauss</div>
+          <p>Reduz [A|b] à forma escalonada por operações elementares nas linhas. Depois resolve por substituição retroativa.</p>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Gauss-Jordan</div>
+          <p>Continua a eliminação até à forma escalonada reduzida. Lê directamente as soluções sem substituição.</p>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Regra de Cramer</div>
+          <p>xᵢ = det(Aᵢ)/det(A), onde Aᵢ é A com a coluna i substituída por b. Só funciona para SPD (n equações, n incógnitas).</p>
+        </div>
+        <div class="teoria-card">
+          <div class="tc-title">Inversão (x = A⁻¹·b)</div>
+          <p>Se A é invertível, a solução é x = A⁻¹·b. Útil quando há múltiplos vetores b para o mesmo A.</p>
+        </div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Operações Elementares nas Linhas</h3>
+      <ul>
+        <li><strong>Tipo I — Troca:</strong> Lᵢ ↔ Lⱼ (troca duas linhas). Muda o sinal do determinante.</li>
+        <li><strong>Tipo II — Escala:</strong> Lᵢ ← k·Lᵢ (multiplica linha por escalar k≠0). Multiplica det por k.</li>
+        <li><strong>Tipo III — Eliminação:</strong> Lᵢ ← Lᵢ + k·Lⱼ (soma múltiplo de outra linha). Não altera o determinante.</li>
+      </ul>
+      <div class="warn-box">Na eliminação de Gauss para resolver sistemas, as operações elementares não alteram o conjunto solução — apenas simplificam o sistema.</div>
+    </div>
+  </div>
+
+  <!-- PANEL: PROPRIEDADES ESPECIAIS -->
+  <div class="teoria-panel" id="tpanel-propriedades">
+    <div class="teoria-section">
+      <h3>Rank (Posto) de uma Matriz</h3>
+      <p>O <strong>rank</strong> de uma matriz é o número de linhas (ou colunas) linearmente independentes — equivale ao número de pivôs na forma escalonada.</p>
+      <ul>
+        <li><strong>rank(A) ≤ min(m, n)</strong></li>
+        <li><strong>rank máximo</strong> (= min(m,n)) → matriz de rank completo</li>
+        <li><strong>rank(A) = rank(Aᵀ)</strong></li>
+        <li><strong>rank(A·B) ≤ min(rank A, rank B)</strong></li>
+        <li><strong>Nullity:</strong> n − rank(A) = dimensão do núcleo (espaço nulo)</li>
+        <li><strong>Teorema Rank-Nulidade:</strong> rank(A) + nullity(A) = n (número de colunas)</li>
+      </ul>
+    </div>
+    <div class="teoria-section">
+      <h3>Traço</h3>
+      <p>O <strong>traço</strong> de uma matriz quadrada é a soma dos elementos da diagonal principal.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição e propriedades</div>
+        <div class="fb-formula">tr(A) = Σᵢ aᵢᵢ = a₁₁ + a₂₂ + ... + aₙₙ</div>
+        <div class="fb-desc">tr(A+B) = tr(A)+tr(B) &nbsp;|&nbsp; tr(kA) = k·tr(A) &nbsp;|&nbsp; tr(Aᵀ) = tr(A) &nbsp;|&nbsp; tr(A·B) = tr(B·A)</div>
+      </div>
+      <div class="tip-box">O traço é igual à soma dos valores próprios (eigenvalues) de A — uma ligação profunda à álgebra linear avançada.</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Norma de Frobenius</h3>
+      <p>A norma de Frobenius mede a "magnitude" de uma matriz, generalizando o conceito de comprimento de vetor.</p>
+      <div class="formula-box">
+        <div class="fb-label">Definição</div>
+        <div class="fb-formula">‖A‖_F = √(Σᵢⱼ aᵢⱼ²)</div>
+        <div class="fb-desc">Raiz quadrada da soma dos quadrados de todos os elementos. Análoga à norma euclidiana de vetores.</div>
+      </div>
+    </div>
+    <div class="teoria-section">
+      <h3>Valores Próprios (Eigenvalues)</h3>
+      <p>Um escalar λ é <strong>valor próprio</strong> de A se existe um vetor não-nulo v (vetor próprio) tal que <strong>A·v = λ·v</strong>. O vetor é apenas escalado, sem rotação.</p>
+      <div class="formula-box">
+        <div class="fb-label">Equação característica</div>
+        <div class="fb-formula">det(A − λI) = 0</div>
+        <div class="fb-desc">Resolver este polinômio de grau n dá os n valores próprios (podem ser complexos).</div>
+      </div>
+      <ul>
+        <li>Soma dos valores próprios = <strong>tr(A)</strong></li>
+        <li>Produto dos valores próprios = <strong>det(A)</strong></li>
+        <li>Se A é simétrica, todos os eigenvalues são <strong>reais</strong></li>
+      </ul>
+      <div class="tip-box">Valores próprios são fundamentais em: análise de estabilidade, compressão de dados (PCA), vibrações mecânicas, PageRank do Google, e muito mais.</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Diagonalização</h3>
+      <p>Uma matriz A é <strong>diagonalizável</strong> se existe uma matriz invertível P tal que P⁻¹·A·P = D, onde D é diagonal com os eigenvalues na diagonal.</p>
+      <div class="formula-box">
+        <div class="fb-label">Aplicação: potências eficientes</div>
+        <div class="fb-formula">Aⁿ = P · Dⁿ · P⁻¹</div>
+        <div class="fb-desc">Como Dⁿ só eleva os elementos diagonais, calcular Aⁿ torna-se muito mais eficiente.</div>
+      </div>
+      <div class="warn-box">Nem todas as matrizes são diagonalizáveis. Uma matriz n×n é diagonalizável se e só se tem n vetores próprios linearmente independentes.</div>
+    </div>
+    <div class="teoria-section">
+      <h3>Formas Quadráticas e Definição</h3>
+      <p>Uma forma quadrática é xᵀ·A·x. A matriz A (simétrica) classifica-se em:</p>
+      <ul>
+        <li><strong>Definida positiva:</strong> todos eigenvalues > 0 (xᵀAx > 0 para todo x≠0)</li>
+        <li><strong>Semi-definida positiva:</strong> todos eigenvalues ≥ 0</li>
+        <li><strong>Definida negativa:</strong> todos eigenvalues &lt; 0</li>
+        <li><strong>Indefinida:</strong> eigenvalues mistos (positivos e negativos)</li>
+      </ul>
+      <div class="tip-box">Estas classificações são essenciais em otimização: um ponto crítico de uma função é mínimo se a Hessiana (matriz das segundas derivadas) for definida positiva nesse ponto.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════
+// FRACTION ARITHMETIC
+// ═══════════════════════════════════════════════
+let USE_FRACTIONS = true;
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a; }
+
+function fracFromFloat(x){
+  if(!isFinite(x)) return {n:0,d:1};
+  const sign = x<0?-1:1; x=Math.abs(x);
+  if(x<1e-12) return {n:0,d:1};
+  const MAX_DENOM=100000;
+  // Use Stern-Brocot / continued fractions
+  let h1=1,h2=0,k1=0,k2=1;
+  let b=x;
+  for(let i=0;i<50;i++){
+    const a=Math.floor(b);
+    let h=a*h1+h2, k=a*k1+k2;
+    if(k>MAX_DENOM) break;
+    h2=h1; k2=k1; h1=h; k1=k;
+    if(Math.abs(b-a)<1e-12) break;
+    b=1/(b-a);
+  }
+  return fracSimplify({n:sign*h1, d:k1});
+}
+
+function fracSimplify({n,d}){
+  if(d===0) return {n:0,d:1};
+  if(n===0) return {n:0,d:1};
+  const g=gcd(Math.abs(n),Math.abs(d));
+  n/=g; d/=g;
+  if(d<0){n=-n;d=-d;}
+  return {n,d};
+}
+
+function fracAdd(a,b){ return fracSimplify({n:a.n*b.d+b.n*a.d, d:a.d*b.d}); }
+function fracSub(a,b){ return fracSimplify({n:a.n*b.d-b.n*a.d, d:a.d*b.d}); }
+function fracMul(a,b){ return fracSimplify({n:a.n*b.n, d:a.d*b.d}); }
+function fracDiv(a,b){ return fracSimplify({n:a.n*b.d, d:a.d*b.n}); }
+function fracNeg(a){ return {n:-a.n,d:a.d}; }
+function fracAbs(a){ return {n:Math.abs(a.n),d:a.d}; }
+function fracToFloat(a){ return a.n/a.d; }
+function fracIsZero(a){ return a.n===0; }
+function fracEq(a,b){ return a.n*b.d===b.n*a.d; }
+
+function numToFrac(x){
+  if(typeof x==='object'&&x!==null&&'n' in x) return x;
+  if(Number.isInteger(x)) return {n:x,d:1};
+  return fracFromFloat(x);
+}
+
+// HTML rendering of a fraction
+function fracHTML(f){
+  f=fracSimplify(f);
+  if(f.d===1) return `<span class="frac-int">${f.n}</span>`;
+  const neg=f.n<0;
+  const absN=Math.abs(f.n);
+  return `<span class="frac-wrap">${neg?'−':''}<span class="frac-inner"><span class="frac-num">${absN}</span><span class="frac-den">${f.d}</span></span></span>`;
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function fmt(n){
+  if(typeof n!=='number'||isNaN(n)) return '?';
+  if(USE_FRACTIONS){
+    const f=numToFrac(n);
+    return fracHTML(f);
+  }
+  if(Number.isInteger(n)) return String(n);
+  const r=parseFloat(n.toFixed(6));
+  return r.toString();
+}
+function fmtS(n){ // short
+  if(USE_FRACTIONS){
+    const f=numToFrac(n);
+    return fracHTML(f);
+  }
+  const r=parseFloat(n.toFixed(4));
+  return r.toString();
+}
+function fmtVal(n){ // plain text for inputs
+  if(Number.isInteger(n)) return String(n);
+  return parseFloat(n.toFixed(6)).toString();
+}
+function cloneM(m){ return m.map(r=>[...r]); }
+function identity(n){ return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0)); }
+
+function makeBracket(height,side){
+  const h=height,w=12,r=5;
+  const p=side==='left'
+    ?`M${w},2 L${r},2 Q2,2 2,${r} L2,${h-r} Q2,${h-2} ${r},${h-2} L${w},${h-2}`
+    :`M2,2 L${w-r},2 Q${w},2 ${w},${r} L${w},${h-r} Q${w},${h-2} ${w-r},${h-2} L2,${h-2}`;
+  return `<svg width="${w+2}" height="${h}"><path d="${p}" fill="none" stroke="rgba(108,99,255,.5)" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function renderGrid(id,rows,cols,type='input',color=''){
+  const cw=type==='result'?62:50, ch=42, gap=4;
+  const gw=cols*cw+(cols-1)*gap, gh=rows*ch+(rows-1)*gap;
+  let cells='';
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if(type==='result'){
+      cells+=`<div class="rcell" id="${id}_${r}_${c}"></div>`;
+    } else {
+      cells+=`<input class="cell" type="number" id="${id}_${r}_${c}" placeholder="0" step="any">`;
+    }
+  }
+  return `
+    <div class="mat-block">
+      <div class="mat-label">${color?`<span>${color}</span>`:color}</div>
+      <div class="bracket-wrap">
+        <div class="bracket">${makeBracket(gh+10,'left')}</div>
+        <div class="mat-grid" style="grid-template-columns:repeat(${cols},${type==='result'?'62px':'50px'});gap:4px">${cells}</div>
+        <div class="bracket">${makeBracket(gh+10,'right')}</div>
+      </div>
+    </div>`;
+}
+
+function getM(id,rows,cols){
+  const m=[];
+  for(let r=0;r<rows;r++){
+    m[r]=[];
+    for(let c=0;c<cols;c++){
+      const v=parseFloat(document.getElementById(`${id}_${r}_${c}`).value);
+      m[r][c]=isNaN(v)?0:v;
+    }
+  }
+  return m;
+}
+
+function setResult(id,rows,cols,M,delay=60){
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const el=document.getElementById(`${id}_${r}_${c}`);
+    if(!el) continue;
+    const d=(r*cols+c)*delay;
+    setTimeout(()=>{
+      el.innerHTML=fmt(M[r][c]);
+      el.classList.add('pop');
+      setTimeout(()=>el.classList.remove('pop'),500);
+    },d);
+  }
+}
+
+function randFill(id,rows,cols,min=-9,max=9){
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const el=document.getElementById(`${id}_${r}_${c}`);
+    if(el) el.value=Math.floor(Math.random()*(max-min+1))+min;
+  }
+}
+
+function clearMatrix(id,rows,cols){
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const el=document.getElementById(`${id}_${r}_${c}`);
+    if(el){ el.value=''; el.textContent=''; el.classList.remove('pop'); }
+  }
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const items=[...document.querySelectorAll('.nav-item')];
+  items.forEach(i=>{ if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes(`'${id}'`)) i.classList.add('active'); });
+  const mItems=[...document.querySelectorAll('.mobile-nav-item')];
+  mItems.forEach(i=>{ if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes(`'${id}'`)) i.classList.add('active'); });
+  document.querySelector('.main').scrollTop=0;
+}
+
+function stepsHeader(title){
+  return `<div class="steps"><div class="steps-header"><h3>${title}</h3><hr></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// OPERAÇÕES SIMPLES (Soma, Subtração, Multiplicação + encadeamento)
+// ═══════════════════════════════════════════════
+
+// State: array of { rows, cols } for each matrix; ops between them ('+', '-', '*')
+let OP_MATRICES = [
+  { rows: 2, cols: 2 },
+  { rows: 2, cols: 2 }
+];
+let OP_OPS = ['+']; // ops[i] is the operator between matrix i and i+1
+let OP_DEFAULT = 'add'; // 'add' | 'sub' | 'mul'
+
+const OP_LABELS = { '+': '+', '-': '−', '*': '×' };
+const OP_NAMES  = { add: '+', sub: '-', mul: '*' };
+
+function setDefaultOp(op) {
+  OP_DEFAULT = op;
+  ['add','sub','mul'].forEach(o => {
+    document.getElementById('opBtn_'+o).classList.toggle('active', o === op);
+  });
+  // Update all existing ops
+  OP_OPS = OP_OPS.map(() => OP_NAMES[op]);
+  renderOp();
+}
+
+function opAddMatrix() {
+  const last = OP_MATRICES[OP_MATRICES.length - 1];
+  // For multiplication, new matrix rows = last cols; for add/sub keep same dims
+  const defaultOp = OP_NAMES[OP_DEFAULT];
+  if (defaultOp === '*') {
+    OP_MATRICES.push({ rows: last.cols, cols: last.cols });
+  } else {
+    OP_MATRICES.push({ rows: last.rows, cols: last.cols });
+  }
+  OP_OPS.push(OP_NAMES[OP_DEFAULT]);
+  renderOp();
+}
+
+function opRemoveMatrix() {
+  if (OP_MATRICES.length <= 2) return;
+  OP_MATRICES.pop();
+  OP_OPS.pop();
+  renderOp();
+}
+
+function opDim(idx, dim, delta) {
+  // dim: 'r' or 'c'
+  const m = OP_MATRICES[idx];
+  if (dim === 'r') m.rows = Math.max(1, Math.min(10, m.rows + delta));
+  else             m.cols = Math.max(1, Math.min(10, m.cols + delta));
+
+  // For multiplication: sync adjacent matrices
+  const opBefore = idx > 0 ? OP_OPS[idx - 1] : null;
+  const opAfter  = idx < OP_OPS.length ? OP_OPS[idx] : null;
+
+  if (dim === 'c' && opAfter === '*') {
+    OP_MATRICES[idx + 1].rows = m.cols;
+  }
+  if (dim === 'r' && opBefore === '*') {
+    OP_MATRICES[idx - 1].cols = m.rows;
+  }
+  renderOp();
+}
+
+function opSetOp(idx, op) {
+  OP_OPS[idx] = op;
+  // sync for multiplication
+  if (op === '*') {
+    OP_MATRICES[idx + 1].rows = OP_MATRICES[idx].cols;
+  } else {
+    // For +/- sync dimensions
+    OP_MATRICES[idx + 1].rows = OP_MATRICES[idx].rows;
+    OP_MATRICES[idx + 1].cols = OP_MATRICES[idx].cols;
+  }
+  renderOp();
+}
+
+function renderOp() {
+  const NAMES = ['A','B','C','D','E','F','G','H','I','J'];
+  let html = '';
+
+  OP_MATRICES.forEach((m, idx) => {
+    const name = NAMES[idx] || `M${idx+1}`;
+    const id   = `op${idx}`;
+
+    // Op connector before this matrix (not before first)
+    if (idx > 0) {
+      const curOp = OP_OPS[idx - 1];
+      html += `<div class="op-between">
+        <div class="op-between-btns">
+          <button class="op-between-btn ${curOp==='+' ?'active-op':''}" onclick="opSetOp(${idx-1},'+')">+</button>
+          <button class="op-between-btn ${curOp==='-' ?'active-op':''}" onclick="opSetOp(${idx-1},'-')">−</button>
+          <button class="op-between-btn ${curOp==='*' ?'active-op':''}" onclick="opSetOp(${idx-1},'*')">×</button>
+        </div>
+      </div>`;
+    }
+
+    html += `<div class="op-chain-block">
+      <div class="op-chain-label">
+        <span style="color:var(--acc);font-weight:600">${name}</span>
+        <span style="color:var(--muted)">${m.rows}×${m.cols}</span>
+        <div style="display:flex;gap:4px;margin-left:4px">
+          <button class="dbtn" onclick="opDim(${idx},'r',-1)" title="Menos linhas">−L</button>
+          <button class="dbtn" onclick="opDim(${idx},'r',1)" title="Mais linhas">+L</button>
+          <button class="dbtn" onclick="opDim(${idx},'c',-1)" title="Menos colunas">−C</button>
+          <button class="dbtn" onclick="opDim(${idx},'c',1)" title="Mais colunas">+C</button>
+        </div>
+      </div>
+      ${renderGrid(id, m.rows, m.cols, 'input', name)}
+    </div>`;
+  });
+
+  document.getElementById('opChainArea').innerHTML =
+    `<div class="op-chain-row" style="overflow-x:auto;padding-bottom:8px">${html}</div>`;
+
+  document.getElementById('opSteps').innerHTML = '';
+  document.getElementById('opResult').innerHTML = '';
+  document.getElementById('opErr').classList.remove('show');
+  opCheckCompat();
+}
+
+function opCheckCompat() {
+  const compat  = document.getElementById('opCompat');
+  const compatT = document.getElementById('opCompatText');
+  let ok = true, msg = 'Compatível';
+
+  for (let i = 0; i < OP_OPS.length; i++) {
+    const A = OP_MATRICES[i], B = OP_MATRICES[i+1];
+    const op = OP_OPS[i];
+    const nameA = ['A','B','C','D','E','F','G','H','I','J'][i]   || `M${i+1}`;
+    const nameB = ['A','B','C','D','E','F','G','H','I','J'][i+1] || `M${i+2}`;
+    if (op === '+' || op === '-') {
+      if (A.rows !== B.rows || A.cols !== B.cols) {
+        ok = false;
+        msg = `Incompatível: ${nameA}(${A.rows}×${A.cols}) e ${nameB}(${B.rows}×${B.cols}) devem ter iguais dimensões para ${op==='+'?'soma':'subtração'}`;
+        break;
+      }
+    } else { // '*'
+      if (A.cols !== B.rows) {
+        ok = false;
+        msg = `Incompatível: colunas de ${nameA}(${A.cols}) ≠ linhas de ${nameB}(${B.rows}) para multiplicação`;
+        break;
+      }
+    }
+  }
+
+  compat.className = ok ? 'compat' : 'compat bad';
+  compatT.textContent = ok ? msg + ` — ${OP_MATRICES.length} matrizes` : msg;
+  return ok;
+}
+
+function calcOp() {
+  const err = document.getElementById('opErr');
+  err.classList.remove('show');
+
+  if (!opCheckCompat()) {
+    err.textContent = document.getElementById('opCompatText').textContent;
+    err.classList.add('show');
+    return;
+  }
+
+  const NAMES = ['A','B','C','D','E','F','G','H','I','J'];
+  // Read all matrices
+  const mats = OP_MATRICES.map((m, i) => getM(`op${i}`, m.rows, m.cols));
+
+  // Apply operations left to right
+  let result = mats[0];
+  let stepsHtml = `<div class="steps"><div class="steps-header"><h3>Operações passo a passo</h3><hr></div>`;
+
+  for (let i = 0; i < OP_OPS.length; i++) {
+    const op    = OP_OPS[i];
+    const B     = mats[i+1];
+    const nameL = NAMES[i]   || `M${i+1}`;
+    const nameR = NAMES[i+1] || `M${i+2}`;
+    const opSym = OP_LABELS[op];
+    const rows  = result.length;
+    const cols  = result[0].length;
+    let next;
+
+    if (op === '+' || op === '-') {
+      next = result.map((row, r) => row.map((v, c) => op === '+' ? v + B[r][c] : v - B[r][c]));
+
+      stepsHtml += `<div class="mat-step-block">
+        <div class="msb-label">
+          <span class="msb-op ${op==='+'?'scale':'swap'}">${op==='+' ? 'SOMA' : 'SUBTRAÇÃO'}</span>
+          ${nameL} ${opSym} ${nameR} — elemento a elemento
+        </div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:3px">`;
+      for (let r = 0; r < rows; r++) {
+        stepsHtml += `<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+        for (let c = 0; c < cols; c++) {
+          const a = result[r][c], b = B[r][c], res = next[r][c];
+          stepsHtml += `<div class="msv-cell changed" title="${fmtS(a)} ${opSym} ${fmtS(b)} = ${fmtS(res)}">${fmtS(res)}</div>`;
+        }
+        stepsHtml += `</div>`;
+      }
+      stepsHtml += `</div></div>`;
+
+    } else { // '*'
+      const rA = result.length, cA = result[0].length, cB = B[0].length;
+      next = Array.from({length: rA}, () => Array(cB).fill(0));
+      for (let r = 0; r < rA; r++)
+        for (let c = 0; c < cB; c++)
+          for (let k = 0; k < cA; k++)
+            next[r][c] += result[r][k] * B[k][c];
+
+      stepsHtml += `<div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op elim">MULTIPLICAÇÃO</span> ${nameL} × ${nameR}</div>
+        <div style="margin-top:10px">`;
+      for (let r = 0; r < rA; r++) {
+        stepsHtml += `<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+        for (let c = 0; c < cB; c++) {
+          const parts = [];
+          for (let k = 0; k < cA; k++) parts.push(`${fmtS(result[r][k])}×${fmtS(B[k][c])}`);
+          stepsHtml += `<div class="msv-cell changed" title="${parts.join('+')} = ${fmtS(next[r][c])}">${fmtS(next[r][c])}</div>`;
+        }
+        stepsHtml += `</div>`;
+      }
+      stepsHtml += `</div></div>`;
+
+      // Detailed cell breakdown for multiply
+      stepsHtml += `<div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op init">DETALHE</span> Produto interno por célula</div>
+        <div style="margin-top:8px">`;
+      for (let r = 0; r < Math.min(rA, 6); r++) {
+        for (let c = 0; c < Math.min(cB, 6); c++) {
+          const parts = [];
+          for (let k = 0; k < cA; k++) parts.push(`<em>${fmtS(result[r][k])}×${fmtS(B[k][c])}</em>`);
+          stepsHtml += `<div class="step"><span class="step-i op">R[${r+1},${c+1}]</span>
+            <span class="step-t">${parts.join(' + ')} = <strong>${fmtS(next[r][c])}</strong></span></div>`;
+        }
+      }
+      if (rA > 6 || cB > 6) stepsHtml += `<div class="step"><span class="step-i" style="color:var(--muted)">...</span><span class="step-t" style="color:var(--muted)">Detalhes omitidos para matrizes grandes</span></div>`;
+      stepsHtml += `</div></div>`;
+    }
+
+    result = next;
+  }
+
+  // Final result
+  const rR = result.length, cR = result[0].length;
+  const gh = rR * 46 + (rR - 1) * 4;
+  const expr = NAMES.slice(0, OP_MATRICES.length).join(' op ');
+
+  stepsHtml += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op div">RESULTADO FINAL</span></div>
+    <div style="margin-top:10px">`;
+  for (let r = 0; r < rR; r++) {
+    stepsHtml += `<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+    for (let c = 0; c < cR; c++) stepsHtml += `<div class="msv-cell changed">${fmtS(result[r][c])}</div>`;
+    stepsHtml += `</div>`;
+  }
+  stepsHtml += `</div></div></div>`;
+
+  // Result matrix display
+  let resHtml = `<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Resultado — ${rR}×${cR}</div>`;
+  resHtml += `<div class="mat-area">`;
+  resHtml += `<div class="mat-block"><div class="mat-label"><span>R</span></div>`;
+  resHtml += `<div class="bracket-wrap">`;
+  resHtml += `<div class="bracket">${makeBracket(gh + 10, 'left')}</div>`;
+  resHtml += `<div class="mat-grid" style="grid-template-columns:repeat(${cR},62px);gap:4px">`;
+  for (let r = 0; r < rR; r++)
+    for (let c = 0; c < cR; c++)
+      resHtml += `<div class="rcell pop">${fmtS(result[r][c])}</div>`;
+  resHtml += `</div>`;
+  resHtml += `<div class="bracket">${makeBracket(gh + 10, 'right')}</div>`;
+  resHtml += `</div></div></div>`;
+
+  document.getElementById('opResult').innerHTML = resHtml;
+  document.getElementById('opSteps').innerHTML  = stepsHtml;
+}
+
+function randOp() {
+  OP_MATRICES.forEach((m, i) => randFill(`op${i}`, m.rows, m.cols, -9, 9));
+}
+
+function clearOp() {
+  OP_MATRICES.forEach((m, i) => clearMatrix(`op${i}`, m.rows, m.cols));
+  document.getElementById('opResult').innerHTML = '';
+  document.getElementById('opSteps').innerHTML  = '';
+}
+
+function renderMult() { renderOp(); } // alias kept for init call
+
+// ═══════════════════════════════════════════════
+// GAUSS
+// ═══════════════════════════════════════════════
+let GN=3;
+function gDim(d){ GN=Math.max(2,Math.min(10,GN+d)); document.getElementById('gn').value=GN; renderGauss(); }
+function renderGauss(){
+  document.getElementById('gMatArea').innerHTML=renderGrid('ga',GN,GN,'input','A');
+  document.getElementById('gResult').innerHTML='';
+  document.getElementById('gSteps').innerHTML='';
+  document.getElementById('gErr').classList.remove('show');
+}
+
+function calcGauss(){
+  const n=GN, A=getM('ga',n,n);
+  const err=document.getElementById('gErr');
+  err.classList.remove('show');
+  let M=cloneM(A), swaps=0;
+
+  // helper: render a matrix state as a visual grid
+  function renderMatState(mat, highlightRows=[], changedRows=[], pivotPos=null, label='', opType='init'){
+    let h=`<div class="mat-step-block">`;
+    h+=`<div class="msb-label"><span class="msb-op ${opType}">${opType.toUpperCase()}</span> ${label}</div>`;
+    h+=`<div style="display:inline-block">`;
+    for(let r=0;r<n;r++){
+      h+=`<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+      for(let c=0;c<n;c++){
+        let cls='msv-cell';
+        if(pivotPos&&r===pivotPos.r&&c===pivotPos.c) cls+=' pivot-cell';
+        else if(changedRows.includes(r)) cls+=' changed';
+        else if(highlightRows.includes(r)) cls+=' highlight';
+        const v=mat[r][c];
+        if(Math.abs(v)<1e-12) cls+=' zero';
+        h+=`<div class="${cls}">${fmtS(v)}</div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`</div></div>`;
+    return h;
+  }
+
+  let html=`<div class="steps"><div class="steps-header"><h3>Eliminação de Gauss — Passo a Passo Visual</h3><hr></div>`;
+  html+=renderMatState(M,[],[],null,'Estado inicial','init');
+
+  for(let col=0;col<n;col++){
+    let maxR=col, maxV=Math.abs(M[col][col]);
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>maxV){ maxV=Math.abs(M[r][col]); maxR=r; }
+    if(maxR!==col){
+      [M[col],M[maxR]]=[M[maxR],M[col]];
+      swaps++;
+      html+=renderMatState(M,[col,maxR],[col,maxR],null,`Troca L${col+1} ↔ L${maxR+1} (pivô maior = ${fmtS(M[col][col])})`, 'swap');
+    }
+    const pivot=M[col][col];
+    if(Math.abs(pivot)<1e-12){
+      err.textContent='Pivô zero encontrado — determinante é 0.';
+      err.classList.add('show');
+      document.getElementById('gSteps').innerHTML=html+'</div>';
+      return;
+    }
+    html+=`<div class="step"><span class="step-i pivot-cell" style="background:rgba(255,209,102,.1);color:var(--gold)">PIVÔ</span><span class="step-t">Coluna <em>${col+1}</em> — pivô = <em>${fmtS(pivot)}</em></span></div>`;
+    for(let r=col+1;r<n;r++){
+      if(Math.abs(M[r][col])<1e-12) continue;
+      const factor=M[r][col]/pivot;
+      for(let c=col;c<n;c++) M[r][c]-=factor*M[col][c];
+      html+=renderMatState(M,[col],[r],{r:col,c:col},`L${r+1} ← L${r+1} − (${fmtS(factor)}) × L${col+1}`, 'elim');
+    }
+  }
+  let det=swaps%2===0?1:-1;
+  for(let i=0;i<n;i++) det*=M[i][i];
+  html+=`<div class="step"><span class="step-i div">DET</span><span class="step-t">Produto da diagonal × sinal das trocas (${swaps} troca${swaps!==1?'s':''}): <strong>${fmtS(det)}</strong></span></div>`;
+  html+=`</div>`;
+  document.getElementById('gSteps').innerHTML=html;
+
+  let res=`<div style="margin-bottom:20px"><div class="scalar-result"><span class="sr-label">Determinante</span><span class="sr-value">${fmtS(det)}</span></div></div>`;
+  res+=`<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Matriz Triangular Superior</div>`;
+  res+=`<div class="mat-area" style="margin-bottom:0">`;
+  const gh=n*46+(n-1)*4;
+  res+=`<div class="mat-block"><div class="mat-label"><span>U</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(gh+10,'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${n},58px);gap:4px">`;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    res+=`<div class="msv-cell${r===c?' pivot-cell':r>c?' zero':''}">${fmtS(M[r][c])}</div>`;
+  }
+  res+=`</div><div class="bracket">${makeBracket(gh+10,'right')}</div></div></div></div>`;
+  document.getElementById('gResult').innerHTML=res;
+}
+function randGauss(){ randFill('ga',GN,GN); }
+function clearGauss(){ clearMatrix('ga',GN,GN); document.getElementById('gResult').innerHTML=''; document.getElementById('gSteps').innerHTML=''; }
+
+// ═══════════════════════════════════════════════
+// DODGSON CONDENSATION
+// ═══════════════════════════════════════════════
+let DN=3;
+function dDim(d){ DN=Math.max(2,Math.min(10,DN+d)); document.getElementById('dn').value=DN; renderDodgson(); }
+function renderDodgson(){
+  document.getElementById('dMatArea').innerHTML=renderGrid('da',DN,DN,'input','A');
+  document.getElementById('dResult').innerHTML='';
+  document.getElementById('dErr').classList.remove('show');
+}
+
+function calcDodgson(){
+  const n=DN, A=getM('da',n,n);
+  const err=document.getElementById('dErr');
+  err.classList.remove('show');
+
+  let levels=[cloneM(A)]; // level 0 = original
+  let ok=true;
+  let errMsg='';
+
+  for(let k=0;k<n-1;k++){
+    const cur=levels[k];
+    const sz=n-k; // current size
+    const next=[];
+    for(let r=0;r<sz-1;r++){
+      next[r]=[];
+      for(let c=0;c<sz-1;c++){
+        const det2=cur[r][c]*cur[r+1][c+1]-cur[r][c+1]*cur[r+1][c];
+        if(k===0){
+          next[r][c]=det2;
+        } else {
+          const denom=levels[k-1][r+1][c+1];
+          if(Math.abs(denom)<1e-12){
+            // Try to handle zero by using Gauss instead
+            ok=false; errMsg=`Zero encontrado no denominador nível ${k} posição [${r+2},${c+2}]. A condensação falhou — usa a Eliminação de Gauss para esta matriz.`;
+            break;
+          }
+          next[r][c]=det2/denom;
+        }
+      }
+      if(!ok) break;
+    }
+    if(!ok) break;
+    levels.push(next);
+  }
+
+  if(!ok){ err.textContent=errMsg; err.classList.add('show'); }
+
+  // Render all levels
+  let html=`<div class="cond-levels">`;
+  for(let k=0;k<levels.length;k++){
+    const lv=levels[k];
+    const sz=lv.length;
+    if(!sz) continue;
+    const isFinal=k===levels.length-1&&sz===1;
+    html+=`<div class="cond-level">
+      <div class="cond-level-title">Nível <span>${k}</span> — ${sz}×${sz}${k===0?' (original)':''}${isFinal?' → Determinante':''}</div>
+      <div class="cond-grid" style="grid-template-columns:repeat(${sz},68px);gap:4px">`;
+    for(let r=0;r<sz;r++) for(let c=0;c<sz;c++){
+      const isFinalEl=isFinal&&r===0&&c===0;
+      html+=`<div class="cond-cell${isFinalEl?' final':''}">${fmtS(lv[r][c])}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  html+=`</div>`;
+
+  if(!ok){ document.getElementById('dResult').innerHTML=html; return; }
+
+  const det=levels[levels.length-1][0][0];
+  let res=`<div style="margin-bottom:20px"><div class="scalar-result"><span class="sr-label">Determinante</span><span class="sr-value">${fmtS(det)}</span></div></div>`;
+  res+=html;
+  document.getElementById('dResult').innerHTML=res;
+}
+function randDodgson(){ randFill('da',DN,DN); }
+function clearDodgson(){ clearMatrix('da',DN,DN); document.getElementById('dResult').innerHTML=''; }
+
+// ═══════════════════════════════════════════════
+// INVERSA — GAUSS-JORDAN
+// ═══════════════════════════════════════════════
+let INVN=3;
+function invDim(d){ INVN=Math.max(2,Math.min(10,INVN+d)); document.getElementById('invn').value=INVN; renderInverse(); }
+function renderInverse(){
+  document.getElementById('invMatArea').innerHTML=renderGrid('inv',INVN,INVN,'input','A');
+  document.getElementById('invResult').innerHTML='';
+  document.getElementById('invSteps').innerHTML='';
+  document.getElementById('invErr').classList.remove('show');
+}
+
+function calcInverse(){
+  const n=INVN, A=getM('inv',n,n);
+  const err=document.getElementById('invErr');
+  err.classList.remove('show');
+  let L=cloneM(A), R=identity(n);
+
+  // render augmented [L|R] matrix
+  function renderAug(lm, rm, highlightRows=[], changedRows=[], pivotPos=null, label='', opType='init'){
+    let h=`<div class="mat-step-block">`;
+    h+=`<div class="msb-label"><span class="msb-op ${opType}">${opType.toUpperCase()}</span> ${label}</div>`;
+    h+=`<div style="display:flex;align-items:flex-start;gap:4px">`;
+    // left half
+    h+=`<div>`;
+    for(let r=0;r<n;r++){
+      h+=`<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+      for(let c=0;c<n;c++){
+        let cls='msv-cell';
+        if(pivotPos&&r===pivotPos.r&&c===pivotPos.c) cls+=' pivot-cell';
+        else if(changedRows.includes(r)) cls+=' changed';
+        else if(highlightRows.includes(r)) cls+=' highlight';
+        if(Math.abs(lm[r][c])<1e-12) cls+=' zero';
+        h+=`<div class="${cls}">${fmtS(lm[r][c])}</div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+    // separator
+    h+=`<div class="aug-sep"></div>`;
+    // right half
+    h+=`<div>`;
+    for(let r=0;r<n;r++){
+      h+=`<div class="mat-step-row">`;
+      for(let c=0;c<n;c++){
+        let cls='msv-cell';
+        if(changedRows.includes(r)) cls+=' changed';
+        if(Math.abs(rm[r][c])<1e-12) cls+=' zero';
+        h+=`<div class="${cls}" style="opacity:.8">${fmtS(rm[r][c])}</div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`</div></div></div>`;
+    return h;
+  }
+
+  let html=`<div class="steps"><div class="steps-header"><h3>Gauss-Jordan: [A|I] → [I|A⁻¹]</h3><hr></div>`;
+  html+=renderAug(L,R,[],[],null,'Matriz aumentada inicial [A|I]','init');
+
+  for(let col=0;col<n;col++){
+    let maxR=col, maxV=Math.abs(L[col][col]);
+    for(let r=col+1;r<n;r++) if(Math.abs(L[r][col])>maxV){ maxV=Math.abs(L[r][col]); maxR=r; }
+    if(maxR!==col){
+      [L[col],L[maxR]]=[L[maxR],L[col]];
+      [R[col],R[maxR]]=[R[maxR],R[col]];
+      html+=renderAug(L,R,[col,maxR],[col,maxR],null,`Troca L${col+1} ↔ L${maxR+1}`,'swap');
+    }
+    const pivot=L[col][col];
+    if(Math.abs(pivot)<1e-12){ err.textContent='Matriz singular — não tem inversa (det = 0).'; err.classList.add('show'); return; }
+    if(Math.abs(pivot-1)>1e-12){
+      for(let c=0;c<n;c++){ L[col][c]/=pivot; R[col][c]/=pivot; }
+      html+=renderAug(L,R,[],[col],{r:col,c:col},`L${col+1} ← L${col+1} ÷ ${fmtS(pivot)}`,'scale');
+    }
+    for(let r=0;r<n;r++){
+      if(r===col||Math.abs(L[r][col])<1e-12) continue;
+      const f=L[r][col];
+      for(let c=0;c<n;c++){ L[r][c]-=f*L[col][c]; R[r][c]-=f*R[col][c]; }
+      html+=renderAug(L,R,[col],[r],{r:col,c:col},`L${r+1} ← L${r+1} − (${fmtS(f)}) × L${col+1}`,'elim');
+    }
+  }
+  html+=`</div>`;
+  document.getElementById('invSteps').innerHTML=html;
+
+  const gh=n*46+(n-1)*4;
+  let res=`<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Matriz Inversa A⁻¹</div>`;
+  res+=`<div class="mat-area">`;
+  res+=`<div class="mat-block"><div class="mat-label"><span>A⁻¹</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(gh+10,'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${n},62px);gap:4px">`;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    res+=`<div class="rcell" style="">${fmtS(R[r][c])}</div>`;
+  }
+  res+=`</div><div class="bracket">${makeBracket(gh+10,'right')}</div></div></div></div>`;
+  document.getElementById('invResult').innerHTML=res;
+}
+function randInverse(){ randFill('inv',INVN,INVN); }
+function clearInverse(){ clearMatrix('inv',INVN,INVN); document.getElementById('invResult').innerHTML=''; document.getElementById('invSteps').innerHTML=''; }
+
+// ═══════════════════════════════════════════════
+// TRANSPOSTA
+// ═══════════════════════════════════════════════
+let TRR=2, TRC=3;
+function trDim(rc,d){
+  if(rc==='r') TRR=Math.max(1,Math.min(10,TRR+d));
+  else TRC=Math.max(1,Math.min(10,TRC+d));
+  document.getElementById('trr').value=TRR;
+  document.getElementById('trc').value=TRC;
+  renderTranspose();
+}
+function renderTranspose(){
+  document.getElementById('trMatArea').innerHTML=renderGrid('tr',TRR,TRC,'input','A');
+  document.getElementById('trResult').innerHTML='';
+}
+function calcTranspose(){
+  const A=getM('tr',TRR,TRC);
+  const T=Array.from({length:TRC},(_,j)=>Array.from({length:TRR},(_,i)=>A[i][j]));
+  const ghT=TRC*46+(TRC-1)*4;
+
+  // Result matrix
+  let res=`<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Transposta Aᵀ (${TRC}×${TRR})</div>`;
+  res+=`<div class="mat-area">`;
+  res+=`<div class="mat-block"><div class="mat-label"><span>Aᵀ</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(ghT+10,'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${TRR},62px);gap:4px">`;
+  for(let r=0;r<TRC;r++) for(let c=0;c<TRR;c++){
+    res+=`<div class="rcell">${fmtS(T[r][c])}</div>`;
+  }
+  res+=`</div><div class="bracket">${makeBracket(ghT+10,'right')}</div></div></div>`;
+  res+=`</div>`;
+
+  // Visual step-by-step: show each element being moved
+  res+=`<div style="margin-top:20px" class="steps"><div class="steps-header"><h3>Visualização — A[i,j] → Aᵀ[j,i]</h3><hr></div>`;
+
+  // Show original A with color-coded rows
+  res+=`<div class="mat-step-block">`;
+  res+=`<div class="msb-label"><span class="msb-op init">ORIGINAL</span> Matriz A (${TRR}×${TRC}) — linhas viram colunas</div>`;
+  res+=`<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">`;
+
+  // A matrix
+  res+=`<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:.1em">A</div>`;
+  for(let i=0;i<TRR;i++){
+    res+=`<div class="mat-step-row"><span class="row-label">L${i+1}</span>`;
+    for(let j=0;j<TRC;j++){
+      res+=`<div class="msv-cell highlight">${fmtS(A[i][j])}</div>`;
+    }
+    res+=`</div>`;
+  }
+  res+=`</div>`;
+
+  // Arrow
+  res+=`<div style="font-size:1.5rem;color:var(--muted);align-self:center;padding-top:20px">→</div>`;
+
+  // Aᵀ matrix
+  res+=`<div><div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:.1em">Aᵀ</div>`;
+  for(let r=0;r<TRC;r++){
+    res+=`<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+    for(let c=0;c<TRR;c++){
+      res+=`<div class="msv-cell changed">${fmtS(T[r][c])}</div>`;
+    }
+    res+=`</div>`;
+  }
+  res+=`</div>`;
+  res+=`</div></div>`;
+
+  // Individual steps
+  for(let i=0;i<TRR;i++) for(let j=0;j<TRC;j++){
+    res+=`<div class="step"><span class="step-i">A[${i+1},${j+1}]</span><span class="step-t">→ Aᵀ[<em>${j+1},${i+1}</em>] = <strong>${fmtS(A[i][j])}</strong></span></div>`;
+  }
+  res+=`</div>`;
+  document.getElementById('trResult').innerHTML=res;
+}
+function randTranspose(){ randFill('tr',TRR,TRC); }
+function clearTranspose(){ clearMatrix('tr',TRR,TRC); document.getElementById('trResult').innerHTML=''; }
+
+// ═══════════════════════════════════════════════
+// POTÊNCIA
+// ═══════════════════════════════════════════════
+let PWN=2, PWE=2;
+function pwDim(d){ PWN=Math.max(2,Math.min(10,PWN+d)); document.getElementById('pwn').value=PWN; renderPower(); }
+function pwExp(d){ PWE=Math.max(1,Math.min(8,PWE+d)); document.getElementById('pwe').value=PWE; }
+function renderPower(){
+  document.getElementById('pwMatArea').innerHTML=renderGrid('pw',PWN,PWN,'input','A');
+  document.getElementById('pwResult').innerHTML='';
+  document.getElementById('pwSteps').innerHTML='';
+  document.getElementById('pwErr').classList.remove('show');
+}
+
+function matMul(A,B,n){
+  const C=Array.from({length:n},()=>Array(n).fill(0));
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) for(let k=0;k<n;k++) C[i][j]+=A[i][k]*B[k][j];
+  return C;
+}
+
+function calcPower(){
+  const n=PWN, e=PWE, A=getM('pw',n,n);
+  let cur=cloneM(A);
+
+  function renderMat(mat, label, opType='op'){
+    let h=`<div class="mat-step-block">`;
+    h+=`<div class="msb-label"><span class="msb-op ${opType}">${label}</span></div>`;
+    h+=`<div>`;
+    for(let r=0;r<n;r++){
+      h+=`<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+      for(let c=0;c<n;c++){
+        let cls='msv-cell';
+        if(Math.abs(mat[r][c])<1e-12) cls+=' zero';
+        h+=`<div class="${cls}">${fmtS(mat[r][c])}</div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`</div></div>`;
+    return h;
+  }
+
+  let html=`<div class="steps"><div class="steps-header"><h3>Potência A^${e} — Passo a Passo</h3><hr></div>`;
+  html+=renderMat(A,'A¹ — Matriz original','init');
+
+  for(let p=2;p<=e;p++){
+    cur=matMul(cur,A,n);
+    html+=renderMat(cur,`A^${p} = A^${p-1} × A`,'op');
+  }
+  html+='</div>';
+  document.getElementById('pwSteps').innerHTML=html;
+
+  const gh=n*46+(n-1)*4;
+  let res=`<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Resultado A^${e}</div>`;
+  res+=`<div class="mat-area">`;
+  res+=`<div class="mat-block"><div class="mat-label"><span>A^${e}</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(gh+10,'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${n},62px);gap:4px">`;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    res+=`<div class="rcell">${fmtS(cur[r][c])}</div>`;
+  }
+  res+=`</div><div class="bracket">${makeBracket(gh+10,'right')}</div></div></div></div>`;
+  document.getElementById('pwResult').innerHTML=res;
+}
+function randPower(){ randFill('pw',PWN,PWN,-5,5); }
+function clearPower(){ clearMatrix('pw',PWN,PWN); document.getElementById('pwResult').innerHTML=''; document.getElementById('pwSteps').innerHTML=''; }
+
+function teoriaTab(id){
+  document.querySelectorAll('.teoria-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.teoria-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tpanel-'+id).classList.add('active');
+  const tabs=[...document.querySelectorAll('.teoria-tab')];
+  tabs.forEach(t=>{ if(t.getAttribute('onclick')&&t.getAttribute('onclick').includes(`'${id}'`)) t.classList.add('active'); });
+}
+
+function toggleFractions(){
+  USE_FRACTIONS=!USE_FRACTIONS;
+  const t=document.getElementById('fracToggle');
+  if(USE_FRACTIONS) t.classList.add('on'); else t.classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════
+// PROPRIEDADES
+// ═══════════════════════════════════════════════
+let PRR=3, PRC=3;
+function prDim(rc,d){
+  if(rc==='r') PRR=Math.max(1,Math.min(10,PRR+d));
+  else PRC=Math.max(1,Math.min(10,PRC+d));
+  document.getElementById('prr').value=PRR;
+  document.getElementById('prc').value=PRC;
+  renderProps();
+}
+function renderProps(){
+  document.getElementById('prMatArea').innerHTML=renderGrid('pr',PRR,PRC,'input','A');
+  document.getElementById('prResult').innerHTML='';
+}
+function randProps(){ randFill('pr',PRR,PRC); }
+function clearProps(){ clearMatrix('pr',PRR,PRC); document.getElementById('prResult').innerHTML=''; }
+
+function calcProps(){
+  const rows=PRR, cols=PRC;
+  const A=getM('pr',rows,cols);
+  const isSquare=rows===cols;
+  const n=rows;
+
+  // ── Traço (só quadradas)
+  let trace=null;
+  if(isSquare){ trace=0; for(let i=0;i<n;i++) trace+=A[i][i]; }
+
+  // ── Norma de Frobenius
+  let frobenius=0;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) frobenius+=A[r][c]*A[r][c];
+  frobenius=Math.sqrt(frobenius);
+
+  // ── Rank via eliminação de Gauss
+  let M=cloneM(A);
+  let rank=0;
+  let pivotCols=[];
+  let pr=0;
+  for(let c=0;c<cols&&pr<rows;c++){
+    let maxR=pr, maxV=Math.abs(M[pr][c]);
+    for(let r=pr+1;r<rows;r++) if(Math.abs(M[r][c])>maxV){ maxV=Math.abs(M[r][c]); maxR=r; }
+    if(maxV<1e-12) continue;
+    [M[pr],M[maxR]]=[M[maxR],M[pr]];
+    const piv=M[pr][c];
+    for(let cc=c;cc<cols;cc++) M[pr][cc]/=piv;
+    for(let r=0;r<rows;r++){
+      if(r===pr||Math.abs(M[r][c])<1e-12) continue;
+      const f=M[r][c];
+      for(let cc=c;cc<cols;cc++) M[r][cc]-=f*M[pr][cc];
+    }
+    pivotCols.push(c);
+    rank++; pr++;
+  }
+
+  // ── Simetria (só quadradas)
+  let isSymmetric=false, isSkewSymmetric=false, isDiagonal=false, isIdentity=false, isZero=false;
+  if(isSquare){
+    isSymmetric=true; isSkewSymmetric=true; isDiagonal=true; isIdentity=true; isZero=true;
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+      const v=A[r][c];
+      if(Math.abs(v)>1e-12) isZero=false;
+      if(r!==c && Math.abs(v)>1e-12) isDiagonal=false;
+      if(r===c && Math.abs(v-1)>1e-12) isIdentity=false;
+      if(r!==c && Math.abs(v-A[c][r])>1e-12) isSymmetric=false;
+      if(Math.abs(v+A[c][r])>1e-12) isSkewSymmetric=false;
+    }
+    if(isZero) isIdentity=false;
+  }
+
+  // ── Nullity
+  const nullity=cols-rank;
+
+  // ── Max / Min values
+  let maxV=-Infinity, minV=Infinity;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if(A[r][c]>maxV) maxV=A[r][c];
+    if(A[r][c]<minV) minV=A[r][c];
+  }
+
+  // ── Render
+  let html=`<div class="prop-grid">`;
+
+  html+=`<div class="prop-card"><div class="pc-label">Dimensão</div><div class="pc-val acc">${rows}×${cols}</div><div class="pc-sub">${rows*cols} elementos</div></div>`;
+  html+=`<div class="prop-card"><div class="pc-label">Rank</div><div class="pc-val">${rank}</div><div class="pc-sub">de min(${rows},${cols})=${Math.min(rows,cols)} — posto ${rank===Math.min(rows,cols)?'máximo':'incompleto'}</div></div>`;
+  html+=`<div class="prop-card"><div class="pc-label">Nullity</div><div class="pc-val ${nullity>0?'warn':'acc'}">${nullity}</div><div class="pc-sub">cols − rank = ${cols} − ${rank}</div></div>`;
+  html+=`<div class="prop-card"><div class="pc-label">Norma Frobenius</div><div class="pc-val acc">${fmtS(frobenius)}</div><div class="pc-sub">√(Σ aᵢⱼ²)</div></div>`;
+  html+=`<div class="prop-card"><div class="pc-label">Valor máx.</div><div class="pc-val">${fmtS(maxV)}</div></div>`;
+  html+=`<div class="prop-card"><div class="pc-label">Valor mín.</div><div class="pc-val">${fmtS(minV)}</div></div>`;
+
+  if(isSquare){
+    html+=`<div class="prop-card"><div class="pc-label">Traço</div><div class="pc-val acc">${fmtS(trace)}</div><div class="pc-sub">Σ diagonal principal</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Invertível?</div><div class="pc-val ${rank===n?'':'bad'}">${rank===n?'Sim':'Não'}</div><div class="pc-sub">${rank===n?'rank = n, det ≠ 0':'rank < n, det = 0'}</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Simétrica?</div><div class="pc-val ${isSymmetric?'':'warn'}">${isSymmetric?'Sim':'Não'}</div><div class="pc-sub">A = Aᵀ</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Anti-simétrica?</div><div class="pc-val ${isSkewSymmetric?'':'warn'}">${isSkewSymmetric?'Sim':'Não'}</div><div class="pc-sub">A = −Aᵀ</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Diagonal?</div><div class="pc-val ${isDiagonal?'':'warn'}">${isDiagonal?'Sim':'Não'}</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Identidade?</div><div class="pc-val ${isIdentity?'':'warn'}">${isIdentity?'Sim':'Não'}</div></div>`;
+    html+=`<div class="prop-card"><div class="pc-label">Nula?</div><div class="pc-val ${isZero?'warn':'acc'}">${isZero?'Sim':'Não'}</div></div>`;
+  }
+  html+=`</div>`;
+
+  // Pivot columns info
+  html+=`<div class="mat-step-block"><div class="msb-label"><span class="msb-op init">RANK</span> Colunas pivot (forma escalonada reduzida)</div>`;
+  html+=`<div>`;
+  for(let r=0;r<rows;r++){
+    html+=`<div class="mat-step-row"><span class="row-label">L${r+1}</span>`;
+    for(let c=0;c<cols;c++){
+      const isPiv=pivotCols.includes(c)&&Math.abs(M[r][c])>1e-12||(M[r][c]===1&&pivotCols.includes(c));
+      let cls='msv-cell';
+      if(Math.abs(M[r][c])<1e-12) cls+=' zero';
+      else if(pivotCols.includes(c)) cls+=' pivot-cell';
+      html+=`<div class="${cls}">${fmtS(M[r][c])}</div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div><div style="margin-top:10px;font-size:10px;color:var(--muted)">Colunas pivot: ${pivotCols.map(c=>`C${c+1}`).join(', ')||'nenhuma'}</div></div>`;
+
+  document.getElementById('prResult').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// EQUAÇÕES MATRICIAIS
+// ═══════════════════════════════════════════════
+
+// ── Tokenizer ──────────────────────────────────
+// Supported tokens: MAT(name,mods), OP(+|-|*), LPAREN, RPAREN, EQ
+// mods: array of 'T' (transpose) or 'INV' (inverse)
+function tokenize(raw){
+  // Normalize: replace ^ with ^, remove spaces
+  let s = raw.replace(/\s+/g,'')
+             .replace(/\^T/gi,"'")       // A^T → A'
+             .replace(/\^-1/g,'§')       // A^-1 → A§ (inv marker)
+             .replace(/inv\(([A-Z])\)/gi,'$1§'); // inv(A) → A§
+
+  const tokens=[];
+  let i=0;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch==='('){tokens.push({t:'LPAREN'});i++;continue;}
+    if(ch===')'){
+      i++;
+      // collect modifiers after )
+      const mods=[];
+      while(i<s.length&&(s[i]==="'"||s[i]==='§')){
+        mods.push(s[i]==="'"?'T':'INV'); i++;
+      }
+      tokens.push({t:'RPAREN',mods});
+      continue;
+    }
+    if(ch==='='){ tokens.push({t:'EQ'}); i++; continue; }
+    if(ch==='+'||ch==='-'||ch==='*'){ tokens.push({t:'OP',v:ch}); i++; continue; }
+    if(/[A-Z]/i.test(ch)){
+      const name=ch.toUpperCase(); i++;
+      const mods=[];
+      while(i<s.length&&(s[i]==="'"||s[i]==='§')){
+        mods.push(s[i]==="'"?'T':'INV'); i++;
+      }
+      tokens.push({t:'TERM',name,mods});
+      continue;
+    }
+    // skip unknown
+    i++;
+  }
+  return tokens;
+}
+
+// ── Render token list as HTML ───────────────────
+function tokensToHTML(tokens){
+  let h='';
+  for(const tk of tokens){
+    if(tk.t==='TERM'){
+      const cls=tk.name==='X'?'tok-X':tk.name==='I'?'tok-I':'tok-mat';
+      let sup='';
+      for(const m of tk.mods) sup+=m==='T'?'ᵀ':'⁻¹';
+      h+=`<span class="${cls}">${tk.name}</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
+    } else if(tk.t==='OP'){
+      h+=`<span class="tok-op">${tk.v==='*'?'·':tk.v}</span>`;
+    } else if(tk.t==='LPAREN'){
+      h+=`<span class="tok-op">(</span>`;
+    } else if(tk.t==='RPAREN'){
+      let sup='';
+      for(const m of (tk.mods||[])) sup+=m==='T'?'ᵀ':'⁻¹';
+      h+=`<span class="tok-op">)</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
+    } else if(tk.t==='EQ'){
+      h+=`<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 8px">=</span>`;
+    } else if(tk.t==='NEWTERM'){
+      let sup='';
+      for(const m of (tk.mods||[])) sup+=m==='T'?'ᵀ':'⁻¹';
+      h+=`<span class="tok-new tok-mat">${tk.name}</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
+    }
+  }
+  return h;
+}
+
+// ── Extract matrix names (excluding X, I) ───────
+function extractMatrixNames(tokens){
+  const names=new Set();
+  for(const tk of tokens) if(tk.t==='TERM'&&tk.name!=='X'&&tk.name!=='I') names.add(tk.name);
+  return [...names].sort();
+}
+
+// ── Split token stream at EQ ────────────────────
+function splitAtEq(tokens){
+  const idx=tokens.findIndex(t=>t.t==='EQ');
+  if(idx<0) return null;
+  return {lhs:tokens.slice(0,idx), rhs:tokens.slice(idx+1)};
+}
+
+// ── Check side contains X ───────────────────────
+function hasX(tokens){ return tokens.some(t=>t.t==='TERM'&&t.name==='X'); }
+
+// ── Matrix arithmetic helpers ───────────────────
+function matAdd(A,B){ return A.map((r,i)=>r.map((v,j)=>v+B[i][j])); }
+function matSub(A,B){ return A.map((r,i)=>r.map((v,j)=>v-B[i][j])); }
+function matTranspose(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
+function matNeg(A){ return A.map(r=>r.map(v=>-v)); }
+
+function matMulFull(A,B){
+  const m=A.length,p=A[0].length,n=B[0].length;
+  const C=Array.from({length:m},()=>Array(n).fill(0));
+  for(let i=0;i<m;i++) for(let j=0;j<n;j++) for(let k=0;k<p;k++) C[i][j]+=A[i][k]*B[k][j];
+  return C;
+}
+
+function matInverseFull(A){
+  const n=A.length;
+  let L=cloneM(A), R=identity(n);
+  for(let col=0;col<n;col++){
+    let maxR=col,maxV=Math.abs(L[col][col]);
+    for(let r=col+1;r<n;r++) if(Math.abs(L[r][col])>maxV){maxV=Math.abs(L[r][col]);maxR=r;}
+    [L[col],L[maxR]]=[L[maxR],L[col]];
+    [R[col],R[maxR]]=[R[maxR],R[col]];
+    const piv=L[col][col];
+    if(Math.abs(piv)<1e-12) throw new Error(`Matriz singular — não tem inversa`);
+    for(let c=0;c<n;c++){L[col][c]/=piv;R[col][c]/=piv;}
+    for(let r=0;r<n;r++){
+      if(r===col||Math.abs(L[r][col])<1e-12) continue;
+      const f=L[r][col];
+      for(let c=0;c<n;c++){L[r][c]-=f*L[col][c];R[r][c]-=f*R[col][c];}
+    }
+  }
+  return R;
+}
+
+function applyMods(mat,mods){
+  let M=mat;
+  for(const m of mods){
+    if(m==='T') M=matTranspose(M);
+    else if(m==='INV') M=matInverseFull(M);
+  }
+  return M;
+}
+
+// State for eq page
+let EQ_MATRICES={};   // name → 2d array
+let EQ_DIM={};        // name → {r,c}
+
+function eqInsert(s){
+  document.getElementById('eqInput').value=s;
+  eqPreview();
+}
+
+function eqPreview(){
+  const raw=document.getElementById('eqInput').value;
+  if(!raw.trim()){
+    document.getElementById('eqParsed').style.display='none';
+    document.getElementById('eqMatInputs').innerHTML='';
+    return;
+  }
+  try{
+    const tokens=tokenize(raw);
+    const names=extractMatrixNames(tokens);
+    document.getElementById('eqParsedEq').innerHTML=tokensToHTML(tokens);
+    document.getElementById('eqParsed').style.display='block';
+    renderEqMatInputs(names);
+    document.getElementById('eqErr').classList.remove('show');
+  } catch(e){
+    document.getElementById('eqParsed').style.display='none';
+  }
+}
+
+function renderEqMatInputs(names){
+  // preserve existing matrix data
+  const area=document.getElementById('eqMatInputs');
+  const existing=EQ_DIM;
+  area.innerHTML='';
+  if(!names.length) return;
+
+  let h=`<div style="margin-bottom:16px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Matrizes conhecidas</div>`;
+  h+=`<div class="eq-matrix-inputs" id="eqMatBlocks">`;
+
+  for(const name of names){
+    const dim=EQ_DIM[name]||{r:2,c:2};
+    EQ_DIM[name]=dim;
+    h+=`<div class="eq-mat-block" id="emb_${name}">`;
+    h+=`<div class="emb-header"><span class="emb-name">${name}</span><span class="emb-dim" id="emb_dim_${name}">${dim.r}×${dim.c}</span><button class="btn-rnd" style="padding:4px 12px;font-size:10px;margin-left:auto" onclick="eqRandMatrix('${name}')">Aleatório</button></div>`;
+    h+=`<div class="emb-dim-row">`;
+    h+=`<span style="font-size:9px;color:var(--muted)">Linhas:</span>`;
+    h+=`<button class="dbtn" onclick="eqMatDim('${name}','r',-1)">−</button>`;
+    h+=`<span style="font-size:13px;color:var(--acc);width:16px;text-align:center" id="embd_r_${name}">${dim.r}</span>`;
+    h+=`<button class="dbtn" onclick="eqMatDim('${name}','r',1)">+</button>`;
+    h+=`<span style="font-size:9px;color:var(--muted);margin-left:8px">Cols:</span>`;
+    h+=`<button class="dbtn" onclick="eqMatDim('${name}','c',-1)">−</button>`;
+    h+=`<span style="font-size:13px;color:var(--acc);width:16px;text-align:center" id="embd_c_${name}">${dim.c}</span>`;
+    h+=`<button class="dbtn" onclick="eqMatDim('${name}','c',1)">+</button>`;
+    h+=`</div>`;
+    h+=`<div id="emb_grid_${name}">`;
+    h+=renderEqGrid(name,dim.r,dim.c);
+    h+=`</div></div>`;
+  }
+  h+=`</div>`;
+  area.innerHTML=h;
+}
+
+function renderEqGrid(name,rows,cols){
+  let h=`<div class="mat-grid" style="grid-template-columns:repeat(${cols},50px);gap:4px">`;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const val=(EQ_MATRICES[name]&&EQ_MATRICES[name][r]&&EQ_MATRICES[name][r][c]!==undefined)?EQ_MATRICES[name][r][c]:'';
+    h+=`<input class="cell" type="number" id="eq_${name}_${r}_${c}" placeholder="0" step="any" value="${val}">`;
+  }
+  h+=`</div>`;
+  return h;
+}
+
+function eqMatDim(name,rc,d){
+  EQ_DIM[name]=EQ_DIM[name]||{r:2,c:2};
+  EQ_DIM[name][rc]=Math.max(1,Math.min(10,EQ_DIM[name][rc]+d));
+  // save current values
+  eqSaveMatrix(name);
+  const dim=EQ_DIM[name];
+  document.getElementById(`embd_r_${name}`).textContent=dim.r;
+  document.getElementById(`embd_c_${name}`).textContent=dim.c;
+  document.getElementById(`emb_dim_${name}`).textContent=`${dim.r}×${dim.c}`;
+  document.getElementById(`emb_grid_${name}`).innerHTML=renderEqGrid(name,dim.r,dim.c);
+}
+
+function eqSaveMatrix(name){
+  const dim=EQ_DIM[name]||{r:2,c:2};
+  EQ_MATRICES[name]=EQ_MATRICES[name]||[];
+  for(let r=0;r<dim.r;r++){
+    EQ_MATRICES[name][r]=EQ_MATRICES[name][r]||[];
+    for(let c=0;c<dim.c;c++){
+      const el=document.getElementById(`eq_${name}_${r}_${c}`);
+      if(el){ const v=parseFloat(el.value); EQ_MATRICES[name][r][c]=isNaN(v)?0:v; }
+    }
+  }
+}
+
+function eqRandMatrix(name){
+  const dim=EQ_DIM[name]||{r:2,c:2};
+  for(let r=0;r<dim.r;r++) for(let c=0;c<dim.c;c++){
+    const el=document.getElementById(`eq_${name}_${r}_${c}`);
+    if(el) el.value=Math.floor(Math.random()*19)-9; // -9 to 9
+  }
+  eqSaveMatrix(name);
+}
+
+function eqGetMatrix(name){
+  eqSaveMatrix(name);
+  return EQ_MATRICES[name];
+}
+
+function clearEquation(){
+  document.getElementById('eqInput').value='';
+  document.getElementById('eqParsed').style.display='none';
+  document.getElementById('eqMatInputs').innerHTML='';
+  document.getElementById('eqSteps').innerHTML='';
+  document.getElementById('eqResult').innerHTML='';
+  document.getElementById('eqErr').classList.remove('show');
+  EQ_MATRICES={}; EQ_DIM={};
+}
+
+// ── Render a matrix visually ────────────────────
+function renderEqMatrix(mat,label,cls=''){
+  if(!mat||!mat.length) return '';
+  const n=mat.length, m=mat[0].length;
+  const gh=n*44+(n-1)*4;
+  let h=`<div class="mat-block">`;
+  if(label) h+=`<div class="mat-label"><span>${label}</span></div>`;
+  h+=`<div class="bracket-wrap"><div class="bracket">${makeBracket(gh+10,'left')}</div>`;
+  h+=`<div class="mat-grid" style="grid-template-columns:repeat(${m},62px);gap:4px">`;
+  for(let r=0;r<n;r++) for(let c=0;c<m;c++){
+    h+=`<div class="rcell ${cls}">${fmtS(mat[r][c])}</div>`;
+  }
+  h+=`</div><div class="bracket">${makeBracket(gh+10,'right')}</div></div></div>`;
+  return h;
+}
+
+// ── Step renderer ───────────────────────────────
+function eqStep(badge,badgeCls,eqHTML,note=''){
+  return `<div class="eq-step-block">
+    <div class="esb-label"><span class="esb-op-badge ${badgeCls}">${badge}</span>${note?`<span style="color:var(--muted);font-size:10px">${note}</span>`:''}</div>
+    <div class="esb-eq">${eqHTML}</div>
+  </div>`;
+}
+
+// ── MAIN SOLVER ─────────────────────────────────
+function solveEquation(){
+  const raw=document.getElementById('eqInput').value.trim();
+  const errEl=document.getElementById('eqErr');
+  const stepsEl=document.getElementById('eqSteps');
+  const resultEl=document.getElementById('eqResult');
+  errEl.classList.remove('show');
+  stepsEl.innerHTML='';
+  resultEl.innerHTML='';
+
+  if(!raw){ errEl.textContent='Escreve uma equação primeiro.'; errEl.classList.add('show'); return; }
+
+  let tokens;
+  try{ tokens=tokenize(raw); } catch(e){ errEl.textContent='Erro ao ler a equação: '+e.message; errEl.classList.add('show'); return; }
+
+  const split=splitAtEq(tokens);
+  if(!split){ errEl.textContent='A equação precisa de ter "=" (ex: A*X = B).'; errEl.classList.add('show'); return; }
+
+  let {lhs,rhs}=split;
+
+  if(!hasX(lhs)&&!hasX(rhs)){ errEl.textContent='Não encontrei X na equação. Usa X para a matriz incógnita.'; errEl.classList.add('show'); return; }
+
+  // If X is on RHS, swap sides
+  let swapped=false;
+  if(!hasX(lhs)&&hasX(rhs)){ [lhs,rhs]=[rhs,lhs]; swapped=true; }
+
+  // Save all matrices
+  const names=extractMatrixNames(tokens);
+  for(const n of names) eqSaveMatrix(n);
+
+  // Build matrix values map
+  const matVals={};
+  for(const n of names){
+    matVals[n]=EQ_MATRICES[n];
+    if(!matVals[n]||!matVals[n].length){ errEl.textContent=`Preenche os valores da matriz ${n}.`; errEl.classList.add('show'); return; }
+  }
+
+  // Attempt to solve — we handle a linear form: LHS = [left_factors] * X * [right_factors] + [additive_terms]
+  // Strategy: analyse token structure, apply rules step by step
+  try{
+    const steps=[];
+    const addStep=(badge,cls,lhsToks,rhsToks,note)=>{
+      steps.push(eqStep(badge,cls,
+        tokensToHTML(lhsToks)+`<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 8px">=</span>`+tokensToHTML(rhsToks),
+        note));
+    };
+
+    // Step 0: show original
+    steps.push(`<div class="steps"><div class="steps-header"><h3>Resolução Passo a Passo</h3><hr></div>`);
+    addStep('EQUAÇÃO','info',lhs,rhs,'Equação original');
+
+    // ── PHASE 1: Move additive non-X terms to RHS ──
+    // Parse lhs as sum of terms/products separated by + or -
+    // We split lhs at top-level + and - operators
+    const lhsGroups=splitByPlusMinus(lhs);
+    const xGroups=[], addGroups=[];
+    for(const g of lhsGroups){
+      if(hasX(g.toks)) xGroups.push(g);
+      else addGroups.push(g);
+    }
+
+    let currentLhs=[...lhs], currentRhs=[...rhs];
+
+    // Move each non-X additive group to RHS
+    for(const g of addGroups){
+      const negated=negateSide([g.toks],g.sign);
+      const note=`Passa ${tokensToHTML(addTokenSign(g.toks,g.sign))} para o lado direito (sinal invertido)`;
+      currentLhs=removeGroupFromTokens(currentLhs,g);
+      currentRhs=mergeRhs(currentRhs,negated);
+      addStep('ISOLAR X','rule',currentLhs,currentRhs,note);
+    }
+
+    // ── PHASE 2: Determine structure — A*X, X*B, A*X*B, just X ──
+    // Flatten currentLhs removing parens for analysis
+    const xIdx=currentLhs.findIndex(t=>t.t==='TERM'&&t.name==='X');
+    const leftFactors=[];  // tokens left of X (multiplied)
+    const rightFactors=[]; // tokens right of X (multiplied)
+
+    // Collect product factors left and right of X in lhs
+    // Simple structural parse: look for * chains
+    let mode='left';
+    for(const tk of currentLhs){
+      if(tk.t==='TERM'&&tk.name==='X'){ mode='right'; continue; }
+      if(tk.t==='OP'&&tk.v==='*') continue; // skip * separators
+      if(mode==='left') leftFactors.push(tk);
+      else rightFactors.push(tk);
+    }
+
+    // Evaluate matrix expressions
+    const evalTerm=tk=>{
+      if(tk.t==='TERM'&&tk.name==='I') return null; // identity — handled specially
+      if(tk.t==='TERM') return applyMods(matVals[tk.name],tk.mods);
+      return null;
+    };
+
+    let X_val;
+
+    // ── Case: X = RHS (no left/right factors) ──
+    if(!leftFactors.length&&!rightFactors.length){
+      addStep('RESULTADO','done',[{t:'TERM',name:'X',mods:[]}],currentRhs,'X já está isolado');
+      X_val=evalExpression(currentRhs,matVals);
+    }
+    // ── Case: A*X = B → X = A⁻¹*B ──
+    else if(leftFactors.length&&!rightFactors.length){
+      const Aname=leftFactors[0].name||'expr';
+      const Amods=[...(leftFactors[0].mods||[])];
+      const A=evalTerm(leftFactors[0]);
+
+      let rhsVal=evalExpression(currentRhs,matVals);
+      const Ainv=matInverseFull(A);
+      const Ainv_tok={t:'TERM',name:Aname,mods:[...Amods,'INV']};
+
+      addStep('REGRA','rule',
+        [{t:'TERM',name:'X',mods:[]}],
+        [Ainv_tok,{t:'OP',v:'*'},...currentRhs],
+        `Multiplica ambos os lados à esquerda por ${Aname}⁻¹`);
+
+      X_val=matMulFull(Ainv,rhsVal);
+      addStep('CALCULAR','calc',
+        [{t:'TERM',name:'X',mods:[]}],
+        [{t:'NEWTERM',name:`${Aname}⁻¹·B_rhs`,mods:[]}],
+        `Calcula ${Aname}⁻¹ e multiplica por RHS`);
+    }
+    // ── Case: X*B = C → X = C*B⁻¹ ──
+    else if(!leftFactors.length&&rightFactors.length){
+      const Bname=rightFactors[0].name||'expr';
+      const Bmods=[...(rightFactors[0].mods||[])];
+      const B=evalTerm(rightFactors[0]);
+      let rhsVal=evalExpression(currentRhs,matVals);
+      const Binv=matInverseFull(B);
+      const Binv_tok={t:'TERM',name:Bname,mods:[...Bmods,'INV']};
+
+      addStep('REGRA','rule',
+        [{t:'TERM',name:'X',mods:[]}],
+        [...currentRhs,{t:'OP',v:'*'},Binv_tok],
+        `Multiplica ambos os lados à direita por ${Bname}⁻¹`);
+
+      X_val=matMulFull(rhsVal,Binv);
+      addStep('CALCULAR','calc',
+        [{t:'TERM',name:'X',mods:[]}],
+        [{t:'NEWTERM',name:`RHS·${Bname}⁻¹`,mods:[]}],
+        `Calcula ${Bname}⁻¹ e multiplica à direita`);
+    }
+    // ── Case: A*X*B = C → X = A⁻¹*C*B⁻¹ ──
+    else if(leftFactors.length&&rightFactors.length){
+      const Aname=leftFactors[0].name||'expr';
+      const Bname=rightFactors[0].name||'expr';
+      const Amods=[...(leftFactors[0].mods||[])];
+      const Bmods=[...(rightFactors[0].mods||[])];
+      const A=evalTerm(leftFactors[0]);
+      const B=evalTerm(rightFactors[0]);
+      const rhsVal=evalExpression(currentRhs,matVals);
+      const Ainv=matInverseFull(A);
+      const Binv=matInverseFull(B);
+      const Ainv_tok={t:'TERM',name:Aname,mods:[...Amods,'INV']};
+      const Binv_tok={t:'TERM',name:Bname,mods:[...Bmods,'INV']};
+
+      addStep('REGRA','rule',
+        [{t:'TERM',name:'X',mods:[]}],
+        [Ainv_tok,{t:'OP',v:'*'},...currentRhs,{t:'OP',v:'*'},Binv_tok],
+        `Multiplica à esquerda por ${Aname}⁻¹ e à direita por ${Bname}⁻¹`);
+
+      X_val=matMulFull(matMulFull(Ainv,rhsVal),Binv);
+      addStep('CALCULAR','calc',
+        [{t:'TERM',name:'X',mods:[]}],
+        [{t:'NEWTERM',name:`${Aname}⁻¹·C·${Bname}⁻¹`,mods:[]}],
+        `Calcula ${Aname}⁻¹, multiplica por C, depois por ${Bname}⁻¹`);
+    }
+
+    steps.push(`</div>`);
+
+    // ── Render result matrix ──
+    const resultHTML=`<div class="eq-result-matrix">
+      <div class="erm-title">✅ Solução — Matriz X</div>
+      <div class="mat-area">${renderEqMatrix(X_val,'X')}</div>
+    </div>`;
+
+    stepsEl.innerHTML=steps.join('');
+    resultEl.innerHTML=resultHTML;
+
+  } catch(e){
+    errEl.textContent='Erro ao resolver: '+e.message;
+    errEl.classList.add('show');
+  }
+}
+
+// ── Split token list at top-level + and - ────────
+function splitByPlusMinus(tokens){
+  const groups=[];
+  let current=[], sign='+';
+  let depth=0;
+  for(const tk of tokens){
+    if(tk.t==='LPAREN') depth++;
+    else if(tk.t==='RPAREN') depth--;
+    else if(depth===0&&tk.t==='OP'&&(tk.v==='+'||tk.v==='-')){
+      if(current.length) groups.push({toks:current,sign});
+      sign=tk.v; current=[];
+      continue;
+    }
+    current.push(tk);
+  }
+  if(current.length) groups.push({toks:current,sign});
+  return groups;
+}
+
+function addTokenSign(toks,sign){
+  if(sign==='+') return toks;
+  return [{t:'OP',v:'-'},...toks];
+}
+
+function removeGroupFromTokens(tokens,g){
+  // Remove the group tokens and adjacent +/- operator
+  const result=[];
+  let i=0;
+  let skip=false;
+  // Rebuild from groups, excluding g
+  const groups=splitByPlusMinus(tokens);
+  const remaining=groups.filter(gg=>gg!==g);
+  if(!remaining.length) return [];
+  let out=[];
+  for(let k=0;k<remaining.length;k++){
+    if(k>0) out.push({t:'OP',v:remaining[k].sign});
+    out.push(...remaining[k].toks);
+  }
+  return out;
+}
+
+function negateSide(groups,sign){
+  // Return tokens for -(group) to add to RHS
+  if(sign==='+'){
+    // was +group on LHS, so we add -group to RHS
+    const toks=groups[0];
+    return [{t:'OP',v:'-'},...toks];
+  } else {
+    // was -group on LHS, so we add +group to RHS
+    const toks=groups[0];
+    return toks;
+  }
+}
+
+function mergeRhs(currentRhs,newToks){
+  if(!currentRhs.length) return newToks;
+  // newToks starts with + or - op
+  return [...currentRhs,...newToks];
+}
+
+// ── Evaluate an expression (no X) ───────────────
+function evalExpression(tokens,matVals){
+  // Simple evaluator: handles +, -, * and mods on terms
+  // Uses recursive descent on top-level + -
+  const groups=splitByPlusMinus(tokens);
+  let result=null;
+  for(const g of groups){
+    const val=evalProduct(g.toks,matVals);
+    if(result===null){ result=g.sign==='-'?matNeg(val):val; }
+    else { result=g.sign==='+'?matAdd(result,val):matSub(result,val); }
+  }
+  return result;
+}
+
+function evalProduct(tokens,matVals){
+  // tokens is a product (no top-level + -)
+  // strip * operators and evaluate each term then multiply
+  const factors=tokens.filter(t=>!(t.t==='OP'&&t.v==='*'));
+  let result=null;
+  for(const tk of factors){
+    let val;
+    if(tk.t==='TERM'){
+      if(tk.name==='I'){
+        // identity — use current result dimensions or skip
+        continue;
+      }
+      val=applyMods(matVals[tk.name],tk.mods);
+    } else if(tk.t==='LPAREN'||tk.t==='RPAREN') continue;
+    else continue;
+    if(result===null) result=val;
+    else result=matMulFull(result,val);
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+// DETERMINANTE — 2×2 direto, 3×3 Sarrus, 4×+ Laplace
+// ═══════════════════════════════════════════════
+let DETN = 3;
+
+function detDim(d) {
+  DETN = Math.max(2, Math.min(10, DETN + d));
+  document.getElementById('detn').value = DETN;
+  const methods = { 2: 'Método Direto (ad−bc)', 3: 'Regra de Sarrus', 4: 'Expansão de Laplace', 5: 'Expansão de Laplace', 6: 'Expansão de Laplace', 7: 'Expansão de Laplace', 8: 'Expansão de Laplace', 9: 'Expansão de Laplace', 10: 'Expansão de Laplace' };
+  document.getElementById('detMethodLabel').textContent = methods[DETN] || 'Expansão de Laplace';
+  renderDet();
+}
+
+function renderDet() {
+  const methods = { 2: 'Método Direto (ad−bc)', 3: 'Regra de Sarrus', 4: 'Expansão de Laplace', 5: 'Expansão de Laplace', 6: 'Expansão de Laplace', 7: 'Expansão de Laplace', 8: 'Expansão de Laplace', 9: 'Expansão de Laplace', 10: 'Expansão de Laplace' };
+  document.getElementById('detMethodLabel').textContent = methods[DETN] || 'Expansão de Laplace';
+  document.getElementById('detMatArea').innerHTML = renderGrid('det', DETN, DETN, 'input', 'A');
+  document.getElementById('detResult').innerHTML = '';
+  document.getElementById('detSteps').innerHTML = '';
+  document.getElementById('detErr').classList.remove('show');
+}
+
+// helper: calculate det of an arbitrary matrix (for Laplace recursion)
+function detValue(M) {
+  const n = M.length;
+  if (n === 1) return M[0][0];
+  if (n === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  let d = 0;
+  for (let j = 0; j < n; j++) {
+    d += M[0][j] * Math.pow(-1, j) * detValue(getSubmatrix(M, 0, j));
+  }
+  return d;
+}
+
+function getSubmatrix(M, skipRow, skipCol) {
+  return M.filter((_, r) => r !== skipRow).map(row => row.filter((_, c) => c !== skipCol));
+}
+
+function renderSubmatrix(sub, highlightMsg) {
+  const n = sub.length;
+  let h = `<div style="display:inline-block;vertical-align:middle">`;
+  const gh = n * 30 + (n - 1) * 3;
+  h += `<div style="display:flex;align-items:stretch;gap:3px">`;
+  h += `<div style="display:flex;align-items:center;opacity:.5">${makeBracket(gh + 8, 'left')}</div>`;
+  h += `<div style="display:grid;grid-template-columns:repeat(${n},36px);gap:3px">`;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    h += `<div style="width:36px;height:30px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text)">${fmtS(sub[r][c])}</div>`;
+  }
+  h += `</div>`;
+  h += `<div style="display:flex;align-items:center;opacity:.5">${makeBracket(gh + 8, 'right')}</div>`;
+  h += `</div></div>`;
+  return h;
+}
+
+function calcDet() {
+  const n = DETN, A = getM('det', n, n);
+  const err = document.getElementById('detErr');
+  err.classList.remove('show');
+
+  let stepsHTML = '';
+  let det = 0;
+
+  if (n === 2) {
+    // ── Método direto ──
+    det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    stepsHTML = `<div class="steps"><div class="steps-header"><h3>Determinante 2×2 — Método Direto</h3><hr></div>`;
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">FÓRMULA</span> det(A) = a₁₁·a₂₂ − a₁₂·a₂₁</div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2;margin-top:8px">
+        det(A) = <span style="color:var(--green)">${fmtS(A[0][0])} × ${fmtS(A[1][1])}</span> − <span style="color:var(--red)">${fmtS(A[0][1])} × ${fmtS(A[1][0])}</span><br>
+        = <span style="color:var(--green)">${fmtS(A[0][0] * A[1][1])}</span> − <span style="color:var(--red)">${fmtS(A[0][1] * A[1][0])}</span><br>
+        = <strong style="color:var(--text);font-size:14px">${fmtS(det)}</strong>
+      </div>
+    </div>`;
+    // Visual matrix with diagonals
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op scale">VISUAL</span> Diagonal principal (verde) e diagonal secundária (vermelho)</div>
+      <div style="display:grid;grid-template-columns:repeat(2,58px);gap:4px;margin-top:8px">
+        <div class="msv-cell changed">${fmtS(A[0][0])}</div>
+        <div class="msv-cell" style="background:rgba(239,71,111,.1);border-color:rgba(239,71,111,.35);color:var(--red)">${fmtS(A[0][1])}</div>
+        <div class="msv-cell" style="background:rgba(239,71,111,.1);border-color:rgba(239,71,111,.35);color:var(--red)">${fmtS(A[1][0])}</div>
+        <div class="msv-cell changed">${fmtS(A[1][1])}</div>
+      </div>
+    </div>`;
+    stepsHTML += `</div>`;
+
+  } else if (n === 3) {
+    // ── Regra de Sarrus ──
+    // 6 products
+    const p1 = A[0][0] * A[1][1] * A[2][2];
+    const p2 = A[0][1] * A[1][2] * A[2][0];
+    const p3 = A[0][2] * A[1][0] * A[2][1];
+    const m1 = A[0][2] * A[1][1] * A[2][0];
+    const m2 = A[0][0] * A[1][2] * A[2][1];
+    const m3 = A[0][1] * A[1][0] * A[2][2];
+    det = p1 + p2 + p3 - m1 - m2 - m3;
+
+    stepsHTML = `<div class="steps"><div class="steps-header"><h3>Determinante 3×3 — Regra de Sarrus</h3><hr></div>`;
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">MÉTODO</span> Soma das diagonais "↘" menos as diagonais "↗"</div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.8">
+        Repete as duas primeiras colunas à direita da matriz. A soma das diagonais descendo (↘) menos a soma das diagonais subindo (↗).
+      </p>
+    </div>`;
+
+    // Show the extended matrix visually
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op scale">VISUAL</span> Matriz estendida — colunas 1 e 2 repetidas</div>
+      <div style="margin-top:10px">`;
+    const extended = [[...A[0], A[0][0], A[0][1]], [...A[1], A[1][0], A[1][1]], [...A[2], A[2][0], A[2][1]]];
+    // diagonal sets
+    const downDiags = [[0, 1, 2], [1, 2, 3], [2, 3, 4]]; // col indices for each down-diag
+    const upDiags = [[2, 1, 0], [3, 2, 1], [4, 3, 2]]; // col indices going up
+    for (let r = 0; r < 3; r++) {
+      stepsHTML += `<div class="mat-step-row"><span class="row-label">L${r + 1}</span>`;
+      for (let c = 0; c < 5; c++) {
+        if (c === 3) stepsHTML += `<div style="width:2px;background:rgba(108,99,255,.3);margin:0 3px;align-self:stretch;border-radius:1px"></div>`;
+        const isMain = downDiags[0].includes(c) || downDiags[1].includes(c) || downDiags[2].includes(c);
+        let style = '';
+        // color down-diagonals green, up-diagonals red
+        if (r === 0 && c === 0) style = 'background:rgba(6,214,160,.12);border-color:rgba(6,214,160,.4);color:var(--green)';
+        else if (r === 1 && c === 1) style = 'background:rgba(6,214,160,.12);border-color:rgba(6,214,160,.4);color:var(--green)';
+        else if (r === 2 && c === 2) style = 'background:rgba(6,214,160,.12);border-color:rgba(6,214,160,.4);color:var(--green)';
+        else if (r === 0 && c === 1) style = 'background:rgba(6,214,160,.07);border-color:rgba(6,214,160,.25);color:var(--green);opacity:.75';
+        else if (r === 1 && c === 2) style = 'background:rgba(6,214,160,.07);border-color:rgba(6,214,160,.25);color:var(--green);opacity:.75';
+        else if (r === 2 && c === 3) style = 'background:rgba(6,214,160,.07);border-color:rgba(6,214,160,.25);color:var(--green);opacity:.75';
+        else if (r === 0 && c === 2) style = 'background:rgba(6,214,160,.04);border-color:rgba(6,214,160,.18);color:var(--green);opacity:.6';
+        else if (r === 1 && c === 3) style = 'background:rgba(6,214,160,.04);border-color:rgba(6,214,160,.18);color:var(--green);opacity:.6';
+        else if (r === 2 && c === 4) style = 'background:rgba(6,214,160,.04);border-color:rgba(6,214,160,.18);color:var(--green);opacity:.6';
+        stepsHTML += `<div class="msv-cell" style="${style}">${fmtS(extended[r][c])}</div>`;
+      }
+      stepsHTML += `</div>`;
+    }
+    stepsHTML += `</div></div>`;
+
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op elim">DIAGONAIS ↘ POSITIVAS</span></div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2;margin-top:8px">
+        D₁ = a₁₁·a₂₂·a₃₃ = ${fmtS(A[0][0])}·${fmtS(A[1][1])}·${fmtS(A[2][2])} = <strong style="color:var(--green)">${fmtS(p1)}</strong><br>
+        D₂ = a₁₂·a₂₃·a₃₁ = ${fmtS(A[0][1])}·${fmtS(A[1][2])}·${fmtS(A[2][0])} = <strong style="color:var(--green)">${fmtS(p2)}</strong><br>
+        D₃ = a₁₃·a₂₁·a₃₂ = ${fmtS(A[0][2])}·${fmtS(A[1][0])}·${fmtS(A[2][1])} = <strong style="color:var(--green)">${fmtS(p3)}</strong>
+      </div>
+    </div>`;
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op swap">DIAGONAIS ↗ NEGATIVAS</span></div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2;margin-top:8px">
+        E₁ = a₁₃·a₂₂·a₃₁ = ${fmtS(A[0][2])}·${fmtS(A[1][1])}·${fmtS(A[2][0])} = <strong style="color:var(--red)">${fmtS(m1)}</strong><br>
+        E₂ = a₁₁·a₂₃·a₃₂ = ${fmtS(A[0][0])}·${fmtS(A[1][2])}·${fmtS(A[2][1])} = <strong style="color:var(--red)">${fmtS(m2)}</strong><br>
+        E₃ = a₁₂·a₂₁·a₃₃ = ${fmtS(A[0][1])}·${fmtS(A[1][0])}·${fmtS(A[2][2])} = <strong style="color:var(--red)">${fmtS(m3)}</strong>
+      </div>
+    </div>`;
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op div">RESULTADO</span></div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.4;margin-top:8px">
+        det(A) = (D₁ + D₂ + D₃) − (E₁ + E₂ + E₃)<br>
+        = (<span style="color:var(--green)">${fmtS(p1)} + ${fmtS(p2)} + ${fmtS(p3)}</span>) − (<span style="color:var(--red)">${fmtS(m1)} + ${fmtS(m2)} + ${fmtS(m3)}</span>)<br>
+        = <span style="color:var(--green)">${fmtS(p1 + p2 + p3)}</span> − <span style="color:var(--red)">${fmtS(m1 + m2 + m3)}</span><br>
+        = <strong style="color:var(--text);font-size:14px">${fmtS(det)}</strong>
+      </div>
+    </div>`;
+    stepsHTML += `</div>`;
+
+  } else {
+    // ── Expansão de Laplace pela 1ª linha ──
+    det = detValue(A);
+
+    stepsHTML = `<div class="steps"><div class="steps-header"><h3>Determinante ${n}×${n} — Expansão de Laplace (1ª linha)</h3><hr></div>`;
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">MÉTODO</span> Expansão de Laplace pela 1ª linha</div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.8">
+        det(A) = Σⱼ a₁ⱼ · C₁ⱼ &nbsp; onde &nbsp; C₁ⱼ = (−1)^(1+j) · M₁ⱼ<br>
+        <strong style="color:var(--text)">Mᵢⱼ</strong> = Menor complementar = det da submatriz sem linha i e coluna j<br>
+        <strong style="color:var(--text)">Cᵢⱼ</strong> = Complemento algébrico (cofator) = (−1)^(i+j) · Mᵢⱼ
+      </p>
+    </div>`;
+
+    let termsHtml = '';
+    let sum = 0;
+    for (let j = 0; j < n; j++) {
+      const sub = getSubmatrix(A, 0, j);
+      const minor = detValue(sub);
+      const sign = Math.pow(-1, j); // i=0 so i+j = j (0-indexed)
+      const cofactor = sign * minor;
+      const term = A[0][j] * cofactor;
+      sum += term;
+
+      stepsHTML += `<div class="mat-step-block">
+        <div class="msb-label">
+          <span class="msb-op ${sign > 0 ? 'scale' : 'swap'}">a₁,${j + 1} = ${fmtS(A[0][j])}</span>
+          Elemento a₁${j + 1} — Coluna ${j + 1} — Sinal: (−1)^(1+${j + 1}) = <span style="color:${sign > 0 ? 'var(--green)' : 'var(--red)'}">${sign > 0 ? '+' : '−'}</span>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:12px">
+          <div>
+            <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px;text-transform:uppercase">Submatriz (sem L1, C${j + 1})</div>
+            ${renderSubmatrix(sub, '')}
+          </div>
+          <div style="align-self:center;padding-top:0">
+            <div style="font-size:11px;color:var(--muted);line-height:2.2">
+              M₁,${j + 1} = det(submatriz) = <strong style="color:var(--acc)">${fmtS(minor)}</strong><br>
+              C₁,${j + 1} = (−1)^(1+${j + 1}) · M₁,${j + 1} = ${sign > 0 ? '+' : '−'}1 · ${fmtS(minor)} = <strong style="color:${sign > 0 ? 'var(--green)' : 'var(--red)'}">${fmtS(cofactor)}</strong><br>
+              Contribuição = a₁,${j + 1} · C₁,${j + 1} = ${fmtS(A[0][j])} · ${fmtS(cofactor)} = <strong style="color:var(--text)">${fmtS(term)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>`;
+      termsHtml += (j > 0 ? ' + ' : '') + `<span style="color:var(--text)">${fmtS(term)}</span>`;
+    }
+
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op div">SOMA TOTAL</span></div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.4;margin-top:8px">
+        det(A) = ${termsHtml}<br>
+        = <strong style="color:var(--text);font-size:14px">${fmtS(det)}</strong>
+      </div>
+    </div>`;
+    stepsHTML += `</div>`;
+  }
+
+  document.getElementById('detSteps').innerHTML = stepsHTML;
+  document.getElementById('detResult').innerHTML = `
+    <div style="margin-bottom:20px">
+      <div class="scalar-result">
+        <span class="sr-label">Determinante</span>
+        <span class="sr-value">${fmtS(det)}</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">
+        ${Math.abs(det) < 1e-10 ? '⚠️ det = 0 → Matriz singular (não tem inversa, linhas linearmente dependentes)' : '✅ det ≠ 0 → Matriz não-singular (invertível)'}
+      </div>
+    </div>`;
+}
+
+function randDet() { randFill('det', DETN, DETN, -6, 6); }
+function clearDet() {
+  clearMatrix('det', DETN, DETN);
+  document.getElementById('detResult').innerHTML = '';
+  document.getElementById('detSteps').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════
+// ADJUNTA
+// ═══════════════════════════════════════════════
+let ADJN = 3;
+
+function adjDim(d) {
+  ADJN = Math.max(2, Math.min(10, ADJN + d));
+  document.getElementById('adjn').value = ADJN;
+  renderAdj();
+}
+
+function renderAdj() {
+  document.getElementById('adjMatArea').innerHTML = renderGrid('adj', ADJN, ADJN, 'input', 'A');
+  document.getElementById('adjResult').innerHTML = '';
+  document.getElementById('adjSteps').innerHTML = '';
+  document.getElementById('adjErr').classList.remove('show');
+}
+
+function calcAdj() {
+  const n = ADJN, A = getM('adj', n, n);
+  const err = document.getElementById('adjErr');
+  err.classList.remove('show');
+
+  // Compute cofactor matrix
+  const cofactors = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => {
+      const sub = getSubmatrix(A, i, j);
+      const minor = detValue(sub);
+      return Math.pow(-1, i + j) * minor;
+    })
+  );
+
+  // Adjunta = transpose of cofactors
+  const adj = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => cofactors[j][i])
+  );
+
+  const detA = detValue(A);
+
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Adjunta — Menores Complementares e Cofatores</h3><hr></div>`;
+
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op init">TEORIA</span> Definição e método</div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.9">
+      <strong style="color:var(--text)">Menor Complementar Mᵢⱼ</strong> = det da submatriz obtida eliminando a linha i e coluna j.<br>
+      <strong style="color:var(--text)">Cofator Cᵢⱼ</strong> = Complemento Algébrico = (−1)^(i+j) · Mᵢⱼ<br>
+      <strong style="color:var(--text)">Matriz de Cofatores</strong> = [Cᵢⱼ] para todos i,j<br>
+      <strong style="color:var(--text)">Adjunta adj(A)</strong> = transposta da matriz de cofatores = [Cⱼᵢ]
+    </p>
+  </div>`;
+
+  // Show each cofactor with submatrix
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op scale">COFATORES</span> Cálculo de cada Mᵢⱼ e Cᵢⱼ</div>
+    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:14px">`;
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const sub = getSubmatrix(A, i, j);
+      const minor = detValue(sub);
+      const sign = Math.pow(-1, i + j);
+      const cof = sign * minor;
+      const signStr = (i + j) % 2 === 0 ? '(+)' : '(−)';
+      stepsHTML += `<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;min-width:160px">
+        <div style="font-size:9px;color:var(--acc);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Posição (${i + 1},${j + 1})</div>
+        ${renderSubmatrix(sub, '')}
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:2">
+          M<sub>${i + 1}${j + 1}</sub> = <strong style="color:var(--acc)">${fmtS(minor)}</strong><br>
+          Sinal: ${signStr}<br>
+          C<sub>${i + 1}${j + 1}</sub> = <strong style="color:${sign > 0 ? 'var(--green)' : 'var(--red)'}">${fmtS(cof)}</strong>
+        </div>
+      </div>`;
+    }
+  }
+  stepsHTML += `</div></div>`;
+
+  // Cofactor matrix visual
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op elim">MATRIZ DE COFATORES</span> [Cᵢⱼ]</div>
+    <div style="margin-top:10px">`;
+  const gh = n * 46 + (n - 1) * 4;
+  stepsHTML += `<div class="mat-area" style="margin-bottom:0">`;
+  stepsHTML += `<div class="mat-block"><div class="mat-label"><span>C</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(gh + 10, 'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${n},62px);gap:4px">`;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    stepsHTML += `<div class="msv-cell ${cofactors[i][j] >= 0 ? 'changed' : ''}" style="${cofactors[i][j] < 0 ? 'background:rgba(239,71,111,.08);border-color:rgba(239,71,111,.3);color:var(--red)' : ''}">${fmtS(cofactors[i][j])}</div>`;
+  }
+  stepsHTML += `</div><div class="bracket">${makeBracket(gh + 10, 'right')}</div></div></div></div>`;
+  stepsHTML += `</div></div>`;
+
+  // Transpose step
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op div">ADJUNTA</span> adj(A) = transposta de C</div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">O elemento (i,j) da adjunta é o cofator C(j,i) — troca linhas e colunas.</p>
+  </div>`;
+
+  stepsHTML += `</div>`;
+  document.getElementById('adjSteps').innerHTML = stepsHTML;
+
+  // Result
+  let res = `<div style="margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Adjunta adj(A)</div>`;
+  res += `<div class="mat-area">`;
+  res += `<div class="mat-block"><div class="mat-label"><span>adj(A)</span></div><div class="bracket-wrap"><div class="bracket">${makeBracket(gh + 10, 'left')}</div><div class="mat-grid" style="grid-template-columns:repeat(${n},62px);gap:4px">`;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    res += `<div class="rcell">${fmtS(adj[i][j])}</div>`;
+  }
+  res += `</div><div class="bracket">${makeBracket(gh + 10, 'right')}</div></div></div></div>`;
+
+  res += `<div style="margin-top:16px;font-size:10px;color:var(--muted);background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px 16px;line-height:1.8">
+    det(A) = <strong style="color:var(--green)">${fmtS(detA)}</strong> &nbsp;·&nbsp;
+    ${Math.abs(detA) > 1e-10 ? `A⁻¹ = adj(A) / det(A) = adj(A) × ${fmtS(1 / detA)}` : '<span style="color:var(--red)">⚠️ det = 0 → Não é possível calcular A⁻¹ com a adjunta</span>'}
+  </div>`;
+
+  document.getElementById('adjResult').innerHTML = res;
+}
+
+function randAdj() { randFill('adj', ADJN, ADJN, -5, 5); }
+function clearAdj() {
+  clearMatrix('adj', ADJN, ADJN);
+  document.getElementById('adjResult').innerHTML = '';
+  document.getElementById('adjSteps').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+renderDet();
+renderAdj();
+renderOp();
+renderGauss();
+renderDodgson();
+renderInverse();
+renderTranspose();
+renderPower();
+renderProps();
+</script>
+</body>
+</html>

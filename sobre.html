@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre — Matrix Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;--s1: #0f0f1a;--s2: #161624;--s3: #1e1e32;
+  --acc: #6c63ff;--acc2: #ff63c8;--gold: #ffd166;--green: #06d6a0;
+  --red: #ef476f;--text: #eeeef8;--muted: #5555a0;--border: #25253d;--border2: #32324e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 800px 400px at 20% 10%,rgba(108,99,255,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 600px 600px at 80% 90%,rgba(255,99,200,.05) 0%,transparent 70%),
+    linear-gradient(rgba(108,99,255,.025) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,rgba(108,99,255,.025) 1px,transparent 1px) 0 0/44px 44px;
+  pointer-events:none;z-index:0;
+}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{width:260px;min-width:260px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid var(--border)}
+.sidebar-logo .tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.2);padding:3px 10px;border-radius:2px;margin-bottom:10px;display:inline-block}
+.sidebar-logo h1{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;background:linear-gradient(135deg,var(--text) 40%,var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
+.sidebar-logo p{font-size:10px;color:var(--muted);margin-top:4px}
+.nav-section{padding:16px 12px 6px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;margin:2px 8px;border-radius:8px;font-size:12px;color:var(--muted);transition:all .2s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.nav-item.active{background:rgba(108,99,255,.12);color:var(--text);border-color:rgba(108,99,255,.3)}
+.nav-item .icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--s3);transition:background .2s}
+.nav-item.active .icon{background:rgba(108,99,255,.25)}
+.nav-item .badge{margin-left:auto;font-size:9px;padding:2px 7px;border-radius:10px;background:var(--s3);color:var(--muted)}
+.nav-item.active .badge{background:rgba(108,99,255,.2);color:var(--acc)}
+.nav-ext:hover{border-color:rgba(255,209,102,.35)!important;color:var(--gold)!important}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);text-align:center}
+.main{flex:1;padding:48px 48px 80px;min-width:0;overflow-y:auto;max-height:100vh}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.main>*{animation:fadeIn .4s ease both}
+.hero{display:flex;align-items:center;gap:28px;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:36px 40px;margin-bottom:32px;position:relative;overflow:hidden;animation-delay:.05s}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(108,99,255,.12),transparent 70%);pointer-events:none}
+.hero-icon{font-size:3.5rem;background:var(--s3);width:80px;height:80px;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border2);flex-shrink:0}
+.hero-tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);padding:3px 10px;border-radius:2px;margin-bottom:10px;display:inline-block}
+.hero h2{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:8px}
+.hero p{font-size:11px;color:var(--muted);line-height:1.8;max-width:520px}
+.section{margin-bottom:28px;animation-delay:.1s}
+.section-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.feat-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px 20px;transition:all .2s;text-decoration:none;display:block}
+.feat-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.feat-card .fc-icon{font-size:1.4rem;margin-bottom:10px}
+.feat-card h4{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:5px;color:var(--text)}
+.feat-card p{font-size:10px;color:var(--muted);line-height:1.7}
+.prose{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:14px;font-size:11px;color:var(--muted);line-height:2}
+.prose p{margin-bottom:12px}
+.prose p:last-child{margin-bottom:0}
+.prose em{color:var(--text);font-style:normal}
+.prose strong{color:var(--acc);font-weight:600}
+.prose .hl{color:var(--green)}
+.math-block{background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:14px 20px;margin:12px 0;font-size:13px;color:var(--acc);letter-spacing:.05em;text-align:center}
+.timeline{display:flex;flex-direction:column;gap:0;margin-bottom:14px}
+.tl-item{display:flex;gap:18px;padding:16px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-left{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px}
+.tl-num{width:32px;height:32px;border-radius:50%;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);color:var(--acc);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.tl-line{flex:1;width:1px;background:var(--border)}
+.tl-right{padding-top:6px;flex:1}
+.tl-right h4{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;margin-bottom:5px}
+.tl-right p{font-size:10px;color:var(--muted);line-height:1.7}
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px 22px;flex:1;min-width:120px}
+.stat .sv{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--green);line-height:1;margin-bottom:4px}
+.stat .sl{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.btn-back{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:12px 28px;border-radius:6px;cursor:pointer;transition:all .2s;text-decoration:none;margin-top:8px}
+.btn-back:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(108,99,255,.3)}
+@media(max-width:780px){.sidebar{display:none}.main{padding:24px 18px 60px}.hero{flex-direction:column;align-items:flex-start;padding:24px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="tag">v3.0</div>
+    <h1>Matrix<br>Lab</h1>
+    <p>Calculadora de Álgebra Linear</p>
+  </div>
+  <div class="nav-section">Operações</div>
+  <a class="nav-item" href="index.html"><div class="icon">🏠</div> Início</a>
+  <a class="nav-item" href="index.html"><div class="icon">✖️</div> Multiplicação <span class="badge">A×B</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">🔺</div> Eliminação de Gauss <span class="badge">det</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">🔷</div> Condensação <span class="badge">det</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">↩️</div> Inversa <span class="badge">A⁻¹</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">🔄</div> Transposta <span class="badge">Aᵀ</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">⚡</div> Potência <span class="badge">Aⁿ</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">🔬</div> Propriedades <span class="badge">info</span></a>
+  <a class="nav-item" href="index.html"><div class="icon">🧮</div> Equações <span class="badge">X=?</span></a>
+  <div class="nav-section">Aprender</div>
+  <a class="nav-item" href="index.html"><div class="icon">📖</div> Teoria <span class="badge">guia</span></a>
+  <div class="nav-section">Mais</div>
+  <a class="nav-item active" href="sobre.html"><div class="icon">🧾</div> Sobre</a>
+  <a class="nav-item nav-ext" href="https://matrixlabsilvaproject.netlify.app" target="_blank"><div class="icon">🔗</div> Projeto Online <span class="badge">↗</span></a>
+  <div class="sidebar-footer">Álgebra Linear · JS puro</div>
+</aside>
+
+<main class="main">
+
+  <div class="hero">
+    <div class="hero-icon">🧮</div>
+    <div>
+      <div class="hero-tag">Sobre o Projeto</div>
+      <h2>Matrix Lab</h2>
+      <p>Uma calculadora de álgebra linear desenvolvida do zero em HTML, CSS e JavaScript puro — sem bibliotecas externas — para apoiar o estudo e a compreensão de operações com matrizes.</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="sv">10</div><div class="sl">Operações</div></div>
+    <div class="stat"><div class="sv">6×6</div><div class="sl">Dimensão máx.</div></div>
+    <div class="stat"><div class="sv">0</div><div class="sl">Dependências</div></div>
+    <div class="stat"><div class="sv">∞</div><div class="sl">Passo a passo</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">O que é o Matrix Lab</div>
+    <div class="prose">
+      <p>O <em>Matrix Lab</em> é uma ferramenta educativa interativa criada para quem estuda <strong>álgebra linear</strong> e precisa de um ambiente visual para explorar operações com matrizes. Em vez de apenas mostrar o resultado final, a aplicação detalha cada passo do processo — tornando os algoritmos transparentes e fáceis de acompanhar.</p>
+      <p>O projeto foi desenvolvido com <em>HTML, CSS e JavaScript puro</em>, sem nenhuma biblioteca externa. Toda a lógica matemática, desde a eliminação de Gauss até à condensação de Dodgson e resolução de equações matriciais, foi implementada de raiz para garantir controlo total sobre cada operação.</p>
+      <p>O objetivo principal é simples: <strong>tornar a álgebra linear menos intimidante</strong>. Ver cada operação elementar — trocas de linhas, eliminações, escalamentos — acontecer passo a passo ajuda a construir intuição matemática sólida.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Operações disponíveis</div>
+    <div class="card-grid">
+      <a class="feat-card" href="index.html"><div class="fc-icon">✖️</div><h4>Multiplicação</h4><p>Calcula A×B com passo a passo de cada elemento C[i,j] = Σ A[i,k]·B[k,j].</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">🔺</div><h4>Eliminação de Gauss</h4><p>Forma triangular superior com pivotagem parcial e determinante.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">🔷</div><h4>Condensação de Dodgson</h4><p>Método de Lewis Carroll (1866) baseado em determinantes 2×2 iterativos.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">↩️</div><h4>Inversa</h4><p>Gauss-Jordan com [A|I] → [I|A⁻¹]. Deteta matrizes singulares.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">🔄</div><h4>Transposta</h4><p>Troca linhas por colunas. Funciona com matrizes não-quadradas.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">⚡</div><h4>Potência</h4><p>Calcula Aⁿ por multiplicação iterativa com resultados intermédios.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">🔬</div><h4>Propriedades</h4><p>Analisa det, traço, rank, norma, simetria e ortogonalidade.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">🧮</div><h4>Equações Matriciais</h4><p>Resolve A·X·B = C isolando X passo a passo com inversas.</p></a>
+      <a class="feat-card" href="index.html"><div class="fc-icon">📖</div><h4>Teoria</h4><p>Guia de referência com os principais conceitos de álgebra linear.</p></a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Como funciona por dentro</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">1</div><div class="tl-line"></div></div>
+        <div class="tl-right"><h4>Introdução de dados</h4><p>Define as dimensões com os botões +/− e preenche os valores. O botão <em>Aleatório</em> gera valores inteiros para testar. Usa <em>ponto</em> como separador decimal (ex: 3.14).</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">2</div><div class="tl-line"></div></div>
+        <div class="tl-right"><h4>Validação e compatibilidade</h4><p>A aplicação verifica a compatibilidade das dimensões e deteta erros — como colunas de A ≠ linhas de B, ou matriz singular na inversa.</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">3</div><div class="tl-line"></div></div>
+        <div class="tl-right"><h4>Cálculo com registo de passos</h4><p>Cada algoritmo grava cada operação elementar — trocas de linhas, fatores de eliminação, escalamentos — apresentado de forma visual e legível.</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">4</div><div class="tl-line"></div></div>
+        <div class="tl-right"><h4>Apresentação animada</h4><p>Resultados aparecem célula a célula com animações. O <em>modo frações</em> pode ser ativado para resultados exatos em vez de decimais.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Conceitos matemáticos</div>
+    <div class="prose">
+      <p>A <strong>multiplicação de matrizes</strong> não é comutativa — em geral, A×B ≠ B×A. O número de colunas de A deve ser igual ao número de linhas de B:</p>
+    </div>
+    <div class="math-block">C[i,j] = Σ(k=1→n) A[i,k] · B[k,j]</div>
+    <div class="prose" style="margin-top:14px">
+      <p>A <strong>Eliminação de Gauss</strong> com <em>pivotagem parcial</em> reduz a matriz à forma triangular superior minimizando erros numéricos. O <span class="hl">determinante</span> é o produto da diagonal, com sinal ajustado por cada troca de linhas.</p>
+      <p>A <strong>Condensação de Dodgson</strong> (1866), proposta por Lewis Carroll, condensa a matriz iterativamente usando determinantes 2×2 até obter um único escalar — o determinante.</p>
+      <p>As <strong>equações matriciais</strong> como A·X = B resolvem-se com X = A⁻¹·B. Para X·B = C, tem-se X = C·B⁻¹. Para A·X·B = C, aplica-se X = A⁻¹·C·B⁻¹.</p>
+    </div>
+  </div>
+
+  <a class="btn-back" href="index.html">← Voltar à calculadora</a>
+
+</main>
+</div>
+</body>
+</html>

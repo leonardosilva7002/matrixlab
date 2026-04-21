@@ -1915,7 +1915,7 @@ det(A) = a₁ⱼ·C₁ⱼ + a₂ⱼ·C₂ⱼ + ... + aₙⱼ·Cₙⱼ</div>
     <div class="dim-card">
       <label>Testar p =</label>
       <div class="dim-row">
-        <input class="dval" id="carP" value="1" style="width:60px;font-size:14px" type="text" inputmode="decimal">
+        <input class="dval" id="carP" value="1" style="width:60px;font-size:14px" type="text" inputmode="text">
       </div>
     </div>
   </div>
@@ -2042,7 +2042,7 @@ function renderGrid(id,rows,cols,type='input',color=''){
     if(type==='result'){
       cells+=`<div class="rcell" id="${id}_${r}_${c}"></div>`;
     } else {
-      cells+=`<input class="cell" type="text" inputmode="decimal" id="${id}_${r}_${c}" placeholder="0">`;
+      cells+=`<input class="cell" type="text" inputmode="text" id="${id}_${r}_${c}" placeholder="0">`;
     }
   }
   return `
@@ -3135,7 +3135,7 @@ function renderEqGrid(name,rows,cols){
   let h=`<div class="mat-grid" style="grid-template-columns:repeat(${cols},50px);gap:4px">`;
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const val=(EQ_MATRICES[name]&&EQ_MATRICES[name][r]&&EQ_MATRICES[name][r][c]!==undefined)?EQ_MATRICES[name][r][c]:'';
-    h+=`<input class="cell" type="text" inputmode="decimal" id="eq_${name}_${r}_${c}" placeholder="0" value="${val}">`;
+    h+=`<input class="cell" type="text" inputmode="text" id="eq_${name}_${r}_${c}" placeholder="0" value="${val}">`;
   }
   h+=`</div>`;
   return h;

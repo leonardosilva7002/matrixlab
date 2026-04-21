@@ -193,7 +193,6 @@ body::before{
 .cell:focus{background:rgba(108,99,255,.08);border-color:var(--acc);box-shadow:0 0 0 3px rgba(108,99,255,.12)}
 .cell:hover:not(:focus){border-color:rgba(108,99,255,.3)}
 .cell::-webkit-inner-spin-button,.cell::-webkit-outer-spin-button{-webkit-appearance:none}
-.cell[type=number]{-moz-appearance:textfield}
 .rcell{
   min-width:62px;height:48px;
   background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.18);
@@ -602,21 +601,84 @@ body::before{
 
 @media(max-width:780px){
   .sidebar{display:none}
-  .main{padding:24px 16px 60px}
-  .mobile-nav{display:flex!important}
+  .main{padding:70px 16px 40px}
+  .mobile-topbar{display:flex!important}
 }
-.mobile-nav{
-  display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:var(--s1);border-top:1px solid var(--border);
-  padding:8px 0;gap:0;
+
+/* ── MOBILE TOP BAR ── */
+.mobile-topbar{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:200;
+  background:var(--s1);border-bottom:1px solid var(--border);
+  height:54px;align-items:center;justify-content:space-between;
+  padding:0 16px;
 }
-.mobile-nav-item{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
-  cursor:pointer;padding:6px;transition:color .2s;
+.mobile-topbar-logo{
+  font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;
+  background:linear-gradient(135deg,var(--text) 40%,var(--acc));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.mobile-nav-item .icon{font-size:1.1rem}
-.mobile-nav-item.active{color:var(--acc)}
+.hamburger-btn{
+  width:40px;height:40px;border-radius:8px;
+  background:var(--s2);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;transition:all .2s;
+}
+.hamburger-btn:hover{background:var(--s3);border-color:var(--border2)}
+.hamburger-btn span{
+  display:block;width:18px;height:2px;background:var(--text);
+  border-radius:2px;transition:all .3s;
+}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ── MOBILE DRAWER ── */
+.mobile-drawer{
+  display:none;position:fixed;top:54px;left:0;right:0;bottom:0;z-index:190;
+}
+.mobile-drawer.open{display:block}
+.drawer-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(2px);
+}
+.drawer-panel{
+  position:absolute;top:0;left:0;bottom:0;width:280px;
+  background:var(--s1);border-right:1px solid var(--border);
+  overflow-y:auto;padding-bottom:20px;
+  animation:slideInDrawer .25s ease;
+}
+@keyframes slideInDrawer{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.drawer-section{
+  padding:14px 12px 4px;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 16px;margin:2px 8px;
+  border-radius:8px;cursor:pointer;
+  font-size:12px;color:var(--muted);
+  transition:all .2s;border:1px solid transparent;
+  user-select:none;
+}
+.drawer-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.drawer-item.active{background:rgba(108,99,255,.12);color:var(--text);border-color:rgba(108,99,255,.3)}
+.drawer-item .icon{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+  background:var(--s3);
+}
+.drawer-item.active .icon{background:rgba(108,99,255,.25)}
+.drawer-item .badge{
+  margin-left:auto;font-size:9px;padding:2px 7px;
+  border-radius:10px;background:var(--s3);color:var(--muted);
+}
+.drawer-item.active .badge{background:rgba(108,99,255,.2);color:var(--acc)}
+.drawer-footer{
+  padding:14px 16px;border-top:1px solid var(--border);margin-top:10px;
+  font-size:10px;color:var(--muted);
+}
+a.drawer-item{color:var(--muted);text-decoration:none}
 a.nav-item{color:var(--muted)}
 a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
 .nav-item.nav-ext:hover{border-color:rgba(255,209,102,.35)!important;color:var(--gold)!important}
@@ -687,17 +749,73 @@ a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--borde
   </div>
 </aside>
 
-<!-- MOBILE NAV -->
-<nav class="mobile-nav">
-  <div class="mobile-nav-item active" onclick="showPage('home')"><div class="icon">🏠</div>Início</div>
-  <div class="mobile-nav-item" onclick="showPage('determinante')"><div class="icon">🔢</div>Det.</div>
-  <div class="mobile-nav-item" onclick="showPage('adjunta')"><div class="icon">🔳</div>Adj.</div>
-  <div class="mobile-nav-item" onclick="showPage('mult')"><div class="icon">➕</div>Oper.</div>
-  <div class="mobile-nav-item" onclick="showPage('gauss')"><div class="icon">🔺</div>Gauss</div>
-  <div class="mobile-nav-item" onclick="showPage('inverse')"><div class="icon">↩️</div>Inversa</div>
-  <div class="mobile-nav-item" onclick="showPage('props')"><div class="icon">🔬</div>Props.</div>
-  <div class="mobile-nav-item" onclick="showPage('teoria')"><div class="icon">📖</div>Teoria</div>
-</nav>
+<!-- MOBILE TOP BAR -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-logo">Matrix Lab</div>
+  <div class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- MOBILE DRAWER -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel">
+    <div class="drawer-section">Início</div>
+    <div class="drawer-item active" id="drawer-home" onclick="showPage('home');closeDrawer()">
+      <div class="icon">🏠</div> Bem-vindo
+    </div>
+    <div class="drawer-section">Operações</div>
+    <div class="drawer-item" id="drawer-mult" onclick="showPage('mult');closeDrawer()">
+      <div class="icon">➕</div> Operações <span class="badge">A±×B</span>
+    </div>
+    <div class="drawer-item" id="drawer-determinante" onclick="showPage('determinante');closeDrawer()">
+      <div class="icon">🔢</div> Determinante <span class="badge">det</span>
+    </div>
+    <div class="drawer-item" id="drawer-adjunta" onclick="showPage('adjunta');closeDrawer()">
+      <div class="icon">🔳</div> Adjunta <span class="badge">adj</span>
+    </div>
+    <div class="drawer-item" id="drawer-gauss" onclick="showPage('gauss');closeDrawer()">
+      <div class="icon">🔺</div> Elim. de Gauss <span class="badge">det</span>
+    </div>
+    <div class="drawer-item" id="drawer-dodgson" onclick="showPage('dodgson');closeDrawer()">
+      <div class="icon">🔷</div> Condensação <span class="badge">det</span>
+    </div>
+    <div class="drawer-item" id="drawer-inverse" onclick="showPage('inverse');closeDrawer()">
+      <div class="icon">↩️</div> Inversa <span class="badge">A⁻¹</span>
+    </div>
+    <div class="drawer-item" id="drawer-transpose" onclick="showPage('transpose');closeDrawer()">
+      <div class="icon">🔄</div> Transposta <span class="badge">Aᵀ</span>
+    </div>
+    <div class="drawer-item" id="drawer-power" onclick="showPage('power');closeDrawer()">
+      <div class="icon">⚡</div> Potência <span class="badge">Aⁿ</span>
+    </div>
+    <div class="drawer-item" id="drawer-props" onclick="showPage('props');closeDrawer()">
+      <div class="icon">🔬</div> Propriedades <span class="badge">info</span>
+    </div>
+    <div class="drawer-item" id="drawer-equacoes" onclick="showPage('equacoes');closeDrawer()">
+      <div class="icon">🧮</div> Equações <span class="badge">X=?</span>
+    </div>
+    <div class="drawer-item" id="drawer-caracteristica" onclick="showPage('caracteristica');closeDrawer()">
+      <div class="icon">🎯</div> Característica <span class="badge">car(A)</span>
+    </div>
+    <div class="drawer-section">Aprender</div>
+    <div class="drawer-item" id="drawer-teoria" onclick="showPage('teoria');closeDrawer()">
+      <div class="icon">📖</div> Teoria <span class="badge">guia</span>
+    </div>
+    <div class="drawer-section">Mais</div>
+    <a class="drawer-item" href="sobre.html" style="text-decoration:none">
+      <div class="icon">🧾</div> Sobre
+    </a>
+    <div class="drawer-footer">
+      <div class="frac-toggle on" id="fracToggleMobile" onclick="toggleFractions()" style="margin-bottom:10px;width:100%;justify-content:space-between;display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;font-size:11px;color:var(--muted)">
+        <span>Mostrar frações</span>
+        <div class="toggle-pill"><div class="toggle-dot"></div></div>
+      </div>
+      Álgebra Linear · JS puro
+    </div>
+  </div>
+</div>
 
 <!-- MAIN -->
 <main class="main">
@@ -1797,7 +1915,7 @@ det(A) = a₁ⱼ·C₁ⱼ + a₂ⱼ·C₂ⱼ + ... + aₙⱼ·Cₙⱼ</div>
     <div class="dim-card">
       <label>Testar p =</label>
       <div class="dim-row">
-        <input class="dval" id="carP" value="1" style="width:60px;font-size:14px" type="number" step="any">
+        <input class="dval" id="carP" value="1" style="width:60px;font-size:14px" type="text" inputmode="decimal">
       </div>
     </div>
   </div>
@@ -1924,7 +2042,7 @@ function renderGrid(id,rows,cols,type='input',color=''){
     if(type==='result'){
       cells+=`<div class="rcell" id="${id}_${r}_${c}"></div>`;
     } else {
-      cells+=`<input class="cell" type="number" id="${id}_${r}_${c}" placeholder="0" step="any">`;
+      cells+=`<input class="cell" type="text" inputmode="decimal" id="${id}_${r}_${c}" placeholder="0">`;
     }
   }
   return `
@@ -1938,12 +2056,14 @@ function renderGrid(id,rows,cols,type='input',color=''){
     </div>`;
 }
 
+function parseCell(s){ return parseFloat((s||'').replace(',','.')); }
+
 function getM(id,rows,cols){
   const m=[];
   for(let r=0;r<rows;r++){
     m[r]=[];
     for(let c=0;c<cols;c++){
-      const v=parseFloat(document.getElementById(`${id}_${r}_${c}`).value);
+      const v=parseCell(document.getElementById(`${id}_${r}_${c}`).value);
       m[r][c]=isNaN(v)?0:v;
     }
   }
@@ -1980,13 +2100,25 @@ function clearMatrix(id,rows,cols){
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.mobile-nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.drawer-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   const items=[...document.querySelectorAll('.nav-item')];
   items.forEach(i=>{ if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes(`'${id}'`)) i.classList.add('active'); });
-  const mItems=[...document.querySelectorAll('.mobile-nav-item')];
-  mItems.forEach(i=>{ if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes(`'${id}'`)) i.classList.add('active'); });
+  const dItem=document.getElementById('drawer-'+id);
+  if(dItem) dItem.classList.add('active');
   document.querySelector('.main').scrollTop=0;
+}
+
+function toggleDrawer(){
+  const drawer=document.getElementById('mobileDrawer');
+  const btn=document.getElementById('hamburgerBtn');
+  const isOpen=drawer.classList.contains('open');
+  if(isOpen){ drawer.classList.remove('open'); btn.classList.remove('open'); }
+  else{ drawer.classList.add('open'); btn.classList.add('open'); }
+}
+function closeDrawer(){
+  document.getElementById('mobileDrawer').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
 }
 
 function stepsHeader(title){
@@ -3003,7 +3135,7 @@ function renderEqGrid(name,rows,cols){
   let h=`<div class="mat-grid" style="grid-template-columns:repeat(${cols},50px);gap:4px">`;
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const val=(EQ_MATRICES[name]&&EQ_MATRICES[name][r]&&EQ_MATRICES[name][r][c]!==undefined)?EQ_MATRICES[name][r][c]:'';
-    h+=`<input class="cell" type="number" id="eq_${name}_${r}_${c}" placeholder="0" step="any" value="${val}">`;
+    h+=`<input class="cell" type="text" inputmode="decimal" id="eq_${name}_${r}_${c}" placeholder="0" value="${val}">`;
   }
   h+=`</div>`;
   return h;
@@ -3028,7 +3160,7 @@ function eqSaveMatrix(name){
     EQ_MATRICES[name][r]=EQ_MATRICES[name][r]||[];
     for(let c=0;c<dim.c;c++){
       const el=document.getElementById(`eq_${name}_${r}_${c}`);
-      if(el){ const v=parseFloat(el.value); EQ_MATRICES[name][r][c]=isNaN(v)?0:v; }
+      if(el){ const v=parseCell(el.value); EQ_MATRICES[name][r][c]=isNaN(v)?0:v; }
     }
   }
 }

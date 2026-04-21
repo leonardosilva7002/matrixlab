@@ -667,6 +667,9 @@ a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--borde
   <div class="nav-item" onclick="showPage('equacoes')">
     <div class="icon">🧮</div> Equações <span class="badge">X=?</span>
   </div>
+  <div class="nav-item" onclick="showPage('caracteristica')">
+    <div class="icon">🎯</div> Característica <span class="badge">car(A)</span>
+  </div>
   <div class="nav-section">Aprender</div>
   <div class="nav-item" onclick="showPage('teoria')">
     <div class="icon">📖</div> Teoria <span class="badge">guia</span>
@@ -1761,6 +1764,56 @@ det(A) = a₁ⱼ·C₁ⱼ + a₂ⱼ·C₂ⱼ + ... + aₙⱼ·Cₙⱼ</div>
       <div class="tip-box">Estas classificações são essenciais em otimização: um ponto crítico de uma função é mínimo se a Hessiana (matriz das segundas derivadas) for definida positiva nesse ponto.</div>
     </div>
   </div>
+</section>
+
+
+<!-- CARACTERÍSTICA DA MATRIZ -->
+<section class="page" id="page-caracteristica">
+  <div class="page-header">
+    <div class="back" onclick="showPage('home')">← Início</div>
+    <h2>Característica da Matriz</h2>
+    <p>Discute a característica (rank/posto) de uma matriz em função de um parâmetro <em>p</em>. Introduz os valores simbólicos de <em>p</em> na matriz, calcula o determinante e analisa para que valores de <em>p</em> a característica muda.</p>
+  </div>
+
+  <!-- Matriz fixa do exercício -->
+  <div class="mat-step-block" style="margin-bottom:24px">
+    <div class="msb-label"><span class="msb-op init">EXERCÍCIO</span> Matriz A com parâmetro p</div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.8">
+      Preenche a matriz abaixo com os valores que contêm o parâmetro <em>p</em>. Usa a notação numérica para as células constantes e o campo <strong style="color:var(--acc)">Valor de p</strong> para definir o valor a testar. A secção de análise simbólica resolve o exercício completo automaticamente.
+    </p>
+  </div>
+
+  <!-- Dim + param bar -->
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="carDim(-1)">−</button>
+        <input class="dval" id="carn" value="3" readonly>
+        <button class="dbtn" onclick="carDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Testar p =</label>
+      <div class="dim-row">
+        <input class="dval" id="carP" value="1" style="width:60px;font-size:14px" type="number" step="any">
+      </div>
+    </div>
+  </div>
+
+  <!-- Symbolic param inputs -->
+  <div id="carSymArea" style="margin-bottom:20px"></div>
+
+  <div id="carErr" class="err"></div>
+  <div class="mat-area" id="carMatArea"></div>
+  <div class="actions">
+    <button class="btn-primary" onclick="calcCar()">Analisar Característica</button>
+    <button class="btn-primary" onclick="calcCarSymbolic()" style="background:linear-gradient(135deg,var(--gold),#ff9e00)">Análise Simbólica (resolve p)</button>
+    <button class="btn-secondary" onclick="clearCar()">Limpar</button>
+  </div>
+  <div id="carResult"></div>
+  <div id="carSteps"></div>
 </section>
 
 </main>
@@ -3670,6 +3723,297 @@ function clearAdj() {
 }
 
 // ═══════════════════════════════════════════════
+// CARACTERÍSTICA DA MATRIZ (RANK em função de p)
+// ═══════════════════════════════════════════════
+let CARN = 3;
+// carSymVals[r][c] = string expression like "-p", "p", "2" etc.
+let carSymVals = [];
+
+function carDim(d) {
+  CARN = Math.max(2, Math.min(6, CARN + d));
+  document.getElementById('carn').value = CARN;
+  renderCar();
+}
+
+function renderCar() {
+  const n = CARN;
+  // Build symbolic input grid
+  let html = `<div style="margin-bottom:16px">
+    <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
+      Expressões das células (usa <code style="color:var(--acc2);background:var(--s3);border-radius:3px;padding:1px 6px">p</code> nas células que dependem do parâmetro)
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(${n},72px);gap:6px;width:fit-content">`;
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      // Pre-fill with the exercise matrix A = [[-p,-1,2],[-1,2,1],[p,p,-2]] when n=3
+      let def = '0';
+      if (n === 3) {
+        const preset = [['-p','-1','2'],['-1','2','1'],['p','p','-2']];
+        def = preset[r][c];
+      }
+      html += `<input id="carsym_${r}_${c}" style="
+        background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:5px;
+        color:var(--acc2);font-family:'JetBrains Mono',monospace;font-size:12px;
+        padding:8px 6px;text-align:center;outline:none;width:72px;transition:border-color .2s;
+      " value="${def}" placeholder="0" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--border2)'">`;
+    }
+  }
+  html += `</div></div>`;
+  document.getElementById('carSymArea').innerHTML = html;
+  document.getElementById('carMatArea').innerHTML = '';
+  document.getElementById('carResult').innerHTML = '';
+  document.getElementById('carSteps').innerHTML = '';
+  document.getElementById('carErr').classList.remove('show');
+}
+
+// Parse a symbolic cell expression: replaces 'p' with a numeric value
+function evalCell(expr, pVal) {
+  if (!expr || expr.trim() === '') return 0;
+  const s = expr.trim()
+    .replace(/\^/g, '**')
+    .replace(/p/gi, `(${pVal})`);
+  try {
+    return Function('"use strict"; return (' + s + ')')();
+  } catch(e) {
+    return NaN;
+  }
+}
+
+// Compute rank via Gaussian elimination
+function computeRank(M) {
+  const rows = M.length, cols = M[0].length;
+  let A = M.map(r => [...r]);
+  let rank = 0, pr = 0;
+  const steps = [];
+  for (let c = 0; c < cols && pr < rows; c++) {
+    let maxR = pr, maxV = Math.abs(A[pr][c]);
+    for (let r = pr + 1; r < rows; r++) if (Math.abs(A[r][c]) > maxV) { maxV = Math.abs(A[r][c]); maxR = r; }
+    if (maxV < 1e-9) { steps.push({type:'zero-col', col:c}); continue; }
+    if (maxR !== pr) { [A[pr], A[maxR]] = [A[maxR], A[pr]]; steps.push({type:'swap', r1:pr+1, r2:maxR+1}); }
+    const piv = A[pr][c];
+    steps.push({type:'pivot', row:pr+1, col:c+1, val:piv, mat: A.map(r=>[...r])});
+    for (let cc = c; cc < cols; cc++) A[pr][cc] /= piv;
+    for (let r = 0; r < rows; r++) {
+      if (r === pr || Math.abs(A[r][c]) < 1e-12) continue;
+      const f = A[r][c];
+      for (let cc = c; cc < cols; cc++) A[r][cc] -= f * A[pr][cc];
+      steps.push({type:'elim', fromRow:pr+1, toRow:r+1, factor:f});
+    }
+    rank++; pr++;
+  }
+  return { rank, echelon: A, steps };
+}
+
+function getCarMatrix(pVal) {
+  const n = CARN;
+  const M = [];
+  for (let r = 0; r < n; r++) {
+    M[r] = [];
+    for (let c = 0; c < n; c++) {
+      const expr = document.getElementById(`carsym_${r}_${c}`).value;
+      M[r][c] = evalCell(expr, pVal);
+    }
+  }
+  return M;
+}
+
+function renderCarMatrixHTML(M, label) {
+  const n = M.length, gh = n * 46 + (n - 1) * 4;
+  let h = `<div class="mat-area" style="margin-bottom:0"><div class="mat-block">`;
+  if (label) h += `<div class="mat-label"><span>${label}</span></div>`;
+  h += `<div class="bracket-wrap"><div class="bracket">${makeBracket(gh + 10, 'left')}</div>`;
+  h += `<div class="mat-grid" style="grid-template-columns:repeat(${n},62px);gap:4px">`;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const v = M[r][c];
+    const isZ = Math.abs(v) < 1e-9;
+    h += `<div class="msv-cell ${isZ ? 'zero' : ''}">${fmtS(v)}</div>`;
+  }
+  h += `</div><div class="bracket">${makeBracket(gh + 10, 'right')}</div></div></div></div>`;
+  return h;
+}
+
+function calcCar() {
+  const pVal = parseFloat(document.getElementById('carP').value);
+  const err = document.getElementById('carErr');
+  err.classList.remove('show');
+  if (isNaN(pVal)) { err.textContent = 'Introduz um valor numérico para p.'; err.classList.add('show'); return; }
+
+  const M = getCarMatrix(pVal);
+  const n = CARN;
+  const { rank, echelon } = computeRank(M);
+  const det = detValue(M);
+
+  // Result
+  const rankColor = rank < n ? 'var(--gold)' : 'var(--green)';
+  let res = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
+    <div class="scalar-result"><span class="sr-label">Característica car(A)</span><span class="sr-value" style="color:${rankColor}">${rank}</span></div>
+    <div class="scalar-result"><span class="sr-label">det(A) para p=${fmtS(pVal)}</span><span class="sr-value" style="color:${Math.abs(det)<1e-9?'var(--red)':'var(--green)'}">${fmtS(det)}</span></div>
+  </div>`;
+  res += `<div style="font-size:11px;color:var(--muted);background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px 16px;line-height:2;margin-bottom:20px">
+    <strong style="color:var(--text)">Para p = ${fmtS(pVal)}:</strong><br>
+    car(A) = <strong style="color:${rankColor}">${rank}</strong> &nbsp;(de ${n})<br>
+    ${rank === n
+      ? `✅ <strong style="color:var(--green)">Rank máximo</strong> → A é invertível, det ≠ 0, linhas linearmente independentes.`
+      : `⚠️ <strong style="color:var(--gold)">Rank < ${n}</strong> → A é singular, det = 0, linhas linearmente dependentes para este valor de p.`}
+  </div>`;
+  document.getElementById('carResult').innerHTML = res;
+
+  // Steps
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Eliminação de Gauss — Cálculo da Característica (p = ${fmtS(pVal)})</h3><hr></div>`;
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op init">MATRIZ A(p=${fmtS(pVal)})</span> Substituição do parâmetro</div>
+    <div style="margin-top:10px">${renderCarMatrixHTML(M, `A(p=${fmtS(pVal)})`)}</div></div>`;
+
+  // Row echelon form
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op elim">FORMA ESCALONADA</span> Eliminação gaussiana</div>
+    <div style="margin-top:10px">${renderCarMatrixHTML(echelon, 'U')}</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.8">
+      Pivôs (linhas não-nulas): <strong style="color:var(--acc)">${rank}</strong><br>
+      car(A) = número de pivôs = <strong style="color:${rankColor}">${rank}</strong>
+    </div>
+  </div>`;
+
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op div">CONCLUSÃO</span></div>
+    <div style="font-size:12px;color:var(--muted);line-height:2;margin-top:8px">
+      car(A(p=${fmtS(pVal)})) = <strong style="color:${rankColor};font-size:14px">${rank}</strong><br>
+      ${rank === n
+        ? `det(A) = ${fmtS(det)} ≠ 0 → Matriz de rank máximo.`
+        : `det(A) = ${fmtS(det)} ≈ 0 → Linhas dependentes, rank reduzido.`}
+    </div>
+  </div>`;
+  stepsHTML += `</div>`;
+  document.getElementById('carSteps').innerHTML = stepsHTML;
+}
+
+// Symbolic analysis: finds all values of p where rank changes
+function calcCarSymbolic() {
+  const n = CARN;
+  const err = document.getElementById('carErr');
+  err.classList.remove('show');
+
+  // Sample many p values to find where det = 0 (rank drops)
+  const pValues = [];
+  for (let p = -20; p <= 20; p += 0.01) pValues.push(parseFloat(p.toFixed(2)));
+
+  // Find sign changes / zeros in det
+  const criticalP = new Set();
+  let prevDet = null, prevP = null;
+  for (const p of pValues) {
+    const M = getCarMatrix(p);
+    const d = detValue(M);
+    if (Math.abs(d) < 0.05) {
+      // Near zero: try to find exact integer or simple fraction
+      for (const candidate of [-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,0.5,-0.5,1,2,3,4,5,6,7,8,9,10,
+                                  1/3,-1/3,2/3,-2/3,1/4,-1/4,3/4,-3/4,1/2,-1/2]) {
+        if (Math.abs(p - candidate) < 0.06) {
+          const dExact = detValue(getCarMatrix(candidate));
+          if (Math.abs(dExact) < 1e-6) criticalP.add(candidate);
+        }
+      }
+    }
+    if (prevDet !== null && ((prevDet > 0 && d < 0) || (prevDet < 0 && d > 0))) {
+      // Sign change: root between prevP and p
+      // Binary search
+      let lo = prevP, hi = p;
+      for (let i = 0; i < 30; i++) {
+        const mid = (lo + hi) / 2;
+        const dMid = detValue(getCarMatrix(mid));
+        if (Math.abs(dMid) < 1e-8) { lo = hi = mid; break; }
+        if ((prevDet > 0) === (dMid > 0)) lo = mid; else hi = mid;
+      }
+      const root = parseFloat(((lo + hi) / 2).toFixed(4));
+      criticalP.add(root);
+    }
+    prevDet = d; prevP = p;
+  }
+
+  const sortedCritical = [...criticalP].sort((a, b) => a - b);
+
+  // Build result
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Análise Simbólica — Característica em função de p</h3><hr></div>`;
+
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op init">TEORIA</span> Como a característica varia com p</div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.9">
+      A <strong style="color:var(--text)">característica (rank)</strong> de uma matriz quadrada n×n é <em>n</em> quando det(A) ≠ 0, e reduz-se quando det(A) = 0.<br>
+      Para encontrar os valores críticos de <em>p</em>, resolvemos <strong style="color:var(--acc)">det(A(p)) = 0</strong>.
+    </p>
+  </div>`;
+
+  // Show det formula symbolically by sampling
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op scale">VALORES CRÍTICOS</span> Valores de p onde det(A) = 0</div>
+    <div style="margin-top:10px">`;
+
+  if (sortedCritical.length === 0) {
+    stepsHTML += `<div style="font-size:12px;color:var(--green)">✅ Nenhum valor real de p (no intervalo [-20, 20]) anula o determinante. A característica é ${n} para todo p real neste intervalo.</div>`;
+  } else {
+    stepsHTML += `<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:2">
+      Encontrados <strong style="color:var(--acc)">${sortedCritical.length}</strong> valor(es) crítico(s) de p:<br>`;
+    sortedCritical.forEach(pc => {
+      const M = getCarMatrix(pc);
+      const { rank } = computeRank(M);
+      const d = detValue(M);
+      stepsHTML += `<div style="background:var(--s2);border:1px solid rgba(255,209,102,.25);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:inline-block;margin-right:8px">
+        <span style="color:var(--gold);font-weight:700">p = ${fmtS(pc)}</span>
+        &nbsp;→&nbsp; det ≈ ${fmtS(d)}
+        &nbsp;→&nbsp; car(A) = <strong style="color:var(--gold)">${rank}</strong>
+      </div>`;
+    });
+    stepsHTML += `</div>`;
+  }
+  stepsHTML += `</div></div>`;
+
+  // Summary table: check a set of values
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op div">TABELA RESUMO</span> Característica para valores de p</div>
+    <div style="margin-top:12px;overflow-x:auto">
+    <table style="border-collapse:collapse;font-size:11px;font-family:'JetBrains Mono',monospace;min-width:100%">
+      <tr style="background:var(--s2)">
+        <th style="padding:8px 14px;border:1px solid var(--border);color:var(--muted);font-weight:600;text-align:center">p</th>
+        <th style="padding:8px 14px;border:1px solid var(--border);color:var(--muted);font-weight:600;text-align:center">det(A)</th>
+        <th style="padding:8px 14px;border:1px solid var(--border);color:var(--muted);font-weight:600;text-align:center">car(A)</th>
+        <th style="padding:8px 14px;border:1px solid var(--border);color:var(--muted);font-weight:600;text-align:center">Observação</th>
+      </tr>`;
+
+  // Sample interesting values plus critical ones
+  const tablePVals = [...new Set([...[-5,-4,-3,-2,-1,0,1,2,3,4,5], ...sortedCritical])].sort((a,b)=>a-b);
+  tablePVals.forEach(p => {
+    const M = getCarMatrix(p);
+    const d = detValue(M);
+    const { rank } = computeRank(M);
+    const isCrit = Math.abs(d) < 1e-6;
+    const rowStyle = isCrit ? 'background:rgba(255,209,102,.06)' : '';
+    stepsHTML += `<tr style="${rowStyle}">
+      <td style="padding:7px 14px;border:1px solid var(--border);text-align:center;color:${isCrit?'var(--gold)':'var(--text)'};font-weight:${isCrit?700:400}">${fmtS(p)}</td>
+      <td style="padding:7px 14px;border:1px solid var(--border);text-align:center;color:${isCrit?'var(--red)':'var(--green)'}">${fmtS(d)}</td>
+      <td style="padding:7px 14px;border:1px solid var(--border);text-align:center;color:${rank<n?'var(--gold)':'var(--green)'};font-weight:700">${rank}</td>
+      <td style="padding:7px 14px;border:1px solid var(--border);color:var(--muted)">${isCrit ? `⚠️ car reduz — p = ${fmtS(p)} é valor crítico` : `✅ car = ${n} (rank máximo)`}</td>
+    </tr>`;
+  });
+  stepsHTML += `</table></div></div>`;
+
+  // Conclusion
+  stepsHTML += `<div class="mat-step-block"><div class="msb-label"><span class="msb-op done">CONCLUSÃO</span></div>
+    <div style="font-size:12px;color:var(--muted);line-height:2.2;margin-top:8px">`;
+  if (sortedCritical.length === 0) {
+    stepsHTML += `car(A) = <strong style="color:var(--green)">${n}</strong> para todo p real (no intervalo estudado).`;
+  } else {
+    const crit = sortedCritical.map(pc => {
+      const { rank } = computeRank(getCarMatrix(pc));
+      return `<span style="color:var(--gold)">p = ${fmtS(pc)}</span> → car = <strong style="color:var(--gold)">${rank}</strong>`;
+    }).join(' &nbsp;|&nbsp; ');
+    stepsHTML += `<strong style="color:var(--text)">Se</strong> ${crit}<br>
+      <strong style="color:var(--text)">Para os restantes valores de p:</strong> car(A) = <strong style="color:var(--green)">${n}</strong> (rank máximo, A invertível).`;
+  }
+  stepsHTML += `</div></div>`;
+  stepsHTML += `</div>`;
+
+  document.getElementById('carSteps').innerHTML = stepsHTML;
+  document.getElementById('carResult').innerHTML = '';
+}
+
+function clearCar() {
+  renderCar();
+}
+
+// ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
 renderDet();
@@ -3681,6 +4025,7 @@ renderInverse();
 renderTranspose();
 renderPower();
 renderProps();
+renderCar();
 </script>
 </body>
 </html>

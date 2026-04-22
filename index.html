@@ -1253,6 +1253,8 @@ a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--borde
         <div class="eq-chip" onclick="eqInsert('A\'*X = B')">Aᵀ·X = B</div>
         <div class="eq-chip" onclick="eqInsert('(A+B)*X = C')">(A+B)·X = C</div>
         <div class="eq-chip" onclick="eqInsert('A*X*A\' = B')">A·X·Aᵀ = B</div>
+        <div class="eq-chip" onclick="eqInsert('2*I + X*B^-1 = A^-1')">2I + X·B⁻¹ = A⁻¹</div>
+        <div class="eq-chip" onclick="eqInsert('A*X + B*X = C')">A·X + B·X = C</div>
       </div>
     </div>
 
@@ -2884,18 +2886,15 @@ function calcProps(){
 }
 
 // ═══════════════════════════════════════════════
-// EQUAÇÕES MATRICIAIS
+// EQUAÇÕES MATRICIAIS — Motor Robusto v2
 // ═══════════════════════════════════════════════
 
 // ── Tokenizer ──────────────────────────────────
-// Supported tokens: MAT(name,mods), OP(+|-|*), LPAREN, RPAREN, EQ
-// mods: array of 'T' (transpose) or 'INV' (inverse)
 function tokenize(raw){
-  // Normalize: replace ^ with ^, remove spaces
   let s = raw.replace(/\s+/g,'')
-             .replace(/\^T/gi,"'")       // A^T → A'
-             .replace(/\^-1/g,'§')       // A^-1 → A§ (inv marker)
-             .replace(/inv\(([A-Z])\)/gi,'$1§'); // inv(A) → A§
+             .replace(/\^[Tt]/g,"'")
+             .replace(/\^-1/g,'§')
+             .replace(/inv\(([A-Za-z])\)/gi, (_,c)=>c.toUpperCase()+'§');
 
   const tokens=[];
   let i=0;
@@ -2904,7 +2903,6 @@ function tokenize(raw){
     if(ch==='('){tokens.push({t:'LPAREN'});i++;continue;}
     if(ch===')'){
       i++;
-      // collect modifiers after )
       const mods=[];
       while(i<s.length&&(s[i]==="'"||s[i]==='§')){
         mods.push(s[i]==="'"?'T':'INV'); i++;
@@ -2914,35 +2912,38 @@ function tokenize(raw){
     }
     if(ch==='='){ tokens.push({t:'EQ'}); i++; continue; }
     if(ch==='+'||ch==='*'){ tokens.push({t:'OP',v:ch}); i++; continue; }
-    // Handle '-': unary minus before number or letter
     if(ch==='-'){
       const prev=tokens[tokens.length-1];
       const isUnary=!prev||prev.t==='OP'||prev.t==='LPAREN'||prev.t==='EQ';
-      if(isUnary&&i+1<s.length&&(/[0-9.]/.test(s[i+1])||/[A-Z]/i.test(s[i+1]))){
-        tokens.push({t:'SCALAR',v:-1});
-        tokens.push({t:'OP',v:'*'});
-        i++; continue;
+      if(isUnary){
+        // peek: if next is digit or letter, emit scalar -1 *
+        if(i+1<s.length&&(/[0-9.]/.test(s[i+1])||/[A-Za-z]/.test(s[i+1]))){
+          tokens.push({t:'SCALAR',v:-1});
+          tokens.push({t:'OP',v:'*'});
+          i++; continue;
+        }
       }
       tokens.push({t:'OP',v:'-'}); i++; continue;
     }
-    // Numbers — support implicit multiplication: 2A, 3I, -2I
     if(/[0-9.]/.test(ch)){
       let num='';
       while(i<s.length&&/[0-9.]/.test(s[i])){ num+=s[i]; i++; }
       tokens.push({t:'SCALAR',v:parseFloat(num)});
-      if(i<s.length&&/[A-Z]/i.test(s[i])) tokens.push({t:'OP',v:'*'});
+      // implicit * before a letter
+      if(i<s.length&&/[A-Za-z(]/.test(s[i])) tokens.push({t:'OP',v:'*'});
       continue;
     }
-    if(/[A-Z]/i.test(ch)){
+    if(/[A-Za-z]/.test(ch)){
       const name=ch.toUpperCase(); i++;
       const mods=[];
       while(i<s.length&&(s[i]==="'"||s[i]==='§')){
         mods.push(s[i]==="'"?'T':'INV'); i++;
       }
+      // implicit * before ( or another letter (e.g. AB meaning A*B)
+      if(i<s.length&&(s[i]==='('||/[A-Za-z]/.test(s[i]))) tokens.push({t:'OP',v:'*'});
       tokens.push({t:'TERM',name,mods});
       continue;
     }
-    // skip unknown
     i++;
   }
   return tokens;
@@ -2955,7 +2956,7 @@ function tokensToHTML(tokens){
     if(tk.t==='TERM'){
       const cls=tk.name==='X'?'tok-X':tk.name==='I'?'tok-I':'tok-mat';
       let sup='';
-      for(const m of tk.mods) sup+=m==='T'?'ᵀ':'⁻¹';
+      for(const m of (tk.mods||[])) sup+=m==='T'?'ᵀ':'⁻¹';
       h+=`<span class="${cls}">${tk.name}</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
     } else if(tk.t==='SCALAR'){
       h+=`<span class="tok-I">${tk.v}</span>`;
@@ -3198,7 +3199,242 @@ function eqStep(badge,badgeCls,eqHTML,note=''){
   </div>`;
 }
 
-// ── MAIN SOLVER ─────────────────────────────────
+// ══════════════════════════════════════════════
+// EXPRESSION TREE — Parse, evaluate, isolate X
+// ══════════════════════════════════════════════
+
+// AST node types:
+//   {type:'mat', name, mods}          — matrix/scalar term
+//   {type:'scalar', v}                — numeric scalar
+//   {type:'add', terms:[{sign,node}]} — sum of terms (sign '+'/'-')
+//   {type:'mul', factors:[node]}      — product of factors
+//   {type:'mod', op, node}            — unary: 'INV' or 'T'
+
+// ── Recursive-descent parser ──────────────────
+// Returns AST node. Handles parentheses, mods, scalars, +/-/* 
+// Priority: parseExpr → parseTerm → parseFactor
+
+function parseTokens(tokens){
+  let pos=0;
+  function peek(){ return tokens[pos]||null; }
+  function consume(){ return tokens[pos++]; }
+  function expect(t){ const tk=consume(); if(!tk||tk.t!==t) throw new Error(`Esperava ${t}`); return tk; }
+
+  function parseExpr(){
+    // additive: term ((+|-) term)*
+    const terms=[];
+    let sign='+';
+    while(pos<tokens.length){
+      const p=peek();
+      if(!p||p.t==='EQ'||p.t==='RPAREN') break;
+      if(p.t==='OP'&&(p.v==='+'||p.v==='-')){ sign=consume().v; continue; }
+      const node=parseTerm();
+      terms.push({sign,node});
+      sign='+';
+    }
+    if(terms.length===1&&terms[0].sign==='+') return terms[0].node;
+    return {type:'add',terms};
+  }
+
+  function parseTerm(){
+    // multiplicative: factor (* factor)*
+    const factors=[];
+    while(pos<tokens.length){
+      const p=peek();
+      if(!p||p.t==='EQ'||p.t==='RPAREN') break;
+      if(p.t==='OP'&&(p.v==='+'||p.v==='-')) break;
+      if(p.t==='OP'&&p.v==='*'){ consume(); continue; }
+      factors.push(parseFactor());
+    }
+    if(factors.length===1) return factors[0];
+    return {type:'mul',factors};
+  }
+
+  function parseFactor(){
+    const p=peek();
+    if(!p) throw new Error('Expressão incompleta');
+
+    if(p.t==='LPAREN'){
+      consume(); // (
+      const node=parseExpr();
+      const rp=expect('RPAREN');
+      // apply mods from )
+      let result=node;
+      for(const m of (rp.mods||[])){
+        result={type:'mod',op:m,node:result};
+      }
+      return result;
+    }
+
+    if(p.t==='SCALAR'){
+      consume();
+      return {type:'scalar',v:p.v};
+    }
+
+    if(p.t==='TERM'){
+      consume();
+      let result={type:'mat',name:p.name,mods:p.mods||[]};
+      // mods are already embedded; but if the token has mods we apply them as a chain
+      return result;
+    }
+
+    throw new Error(`Token inesperado: ${JSON.stringify(p)}`);
+  }
+
+  const node=parseExpr();
+  return node;
+}
+
+// ── Evaluate AST → matrix value (no X allowed) ──
+function evalAST(node, matVals){
+  if(!node) throw new Error('Nó nulo');
+  if(node.type==='scalar'){
+    // return as identity-scaled matrix if other ops expect it; 
+    // but we handle scalar properly in mul
+    return {isScalar:true, v:node.v};
+  }
+  if(node.type==='mat'){
+    if(node.name==='X') throw new Error('X encontrado durante avaliação (não é permitido aqui)');
+    if(node.name==='I'){
+      // size determined by context — return sentinel
+      return {isIdentity:true, mods:node.mods};
+    }
+    const mat=matVals[node.name];
+    if(!mat) throw new Error(`Matriz ${node.name} não definida`);
+    let M=cloneM(mat);
+    for(const m of (node.mods||[])){
+      if(m==='T') M=matTranspose(M);
+      else if(m==='INV') M=matInverseFull(M);
+    }
+    return {isMatrix:true, mat:M};
+  }
+  if(node.type==='mod'){
+    const inner=evalAST(node.node, matVals);
+    const M=resolveToMatrix(inner, matVals, null);
+    if(node.op==='T') return {isMatrix:true,mat:matTranspose(M)};
+    if(node.op==='INV') return {isMatrix:true,mat:matInverseFull(M)};
+    throw new Error(`Modificador desconhecido: ${node.op}`);
+  }
+  if(node.type==='add'){
+    let result=null;
+    for(const {sign,node:child} of node.terms){
+      const val=evalAST(child, matVals);
+      const M=resolveToMatrix(val, matVals, result);
+      if(result===null){
+        result=sign==='-' ? matNeg(M) : M;
+      } else {
+        result=sign==='+' ? matAdd(result,M) : matSub(result,M);
+      }
+    }
+    return {isMatrix:true,mat:result};
+  }
+  if(node.type==='mul'){
+    let result=null;
+    let pendingScalar=1;
+    for(const child of node.factors){
+      const val=evalAST(child, matVals);
+      if(val.isScalar){ pendingScalar*=val.v; continue; }
+      const M=resolveToMatrix(val, matVals, result);
+      const scaled = pendingScalar!==1 ? M.map(r=>r.map(v=>v*pendingScalar)) : M;
+      pendingScalar=1;
+      result = result===null ? scaled : matMulFull(result, scaled);
+    }
+    if(result===null){
+      throw new Error('Produto vazio');
+    }
+    if(pendingScalar!==1) result=result.map(r=>r.map(v=>v*pendingScalar));
+    return {isMatrix:true,mat:result};
+  }
+  throw new Error(`Tipo de nó desconhecido: ${node.type}`);
+}
+
+function resolveToMatrix(val, matVals, contextMatrix){
+  if(val.isMatrix) return val.mat;
+  if(val.isScalar){
+    const n = contextMatrix ? contextMatrix.length : guessSize(matVals);
+    let M=identity(n).map(r=>r.map(v=>v*val.v));
+    return M;
+  }
+  if(val.isIdentity){
+    const n = contextMatrix ? contextMatrix.length : guessSize(matVals);
+    let M=identity(n);
+    for(const m of (val.mods||[])){
+      if(m==='T') M=matTranspose(M);
+      else if(m==='INV') M=matInverseFull(M);
+    }
+    return M;
+  }
+  throw new Error('Não foi possível resolver o valor');
+}
+
+function guessSize(matVals){
+  for(const k in matVals){ if(matVals[k]&&matVals[k].length) return matVals[k].length; }
+  return 2;
+}
+
+// ── AST to display string ─────────────────────
+function astToHTML(node){
+  if(!node) return '';
+  if(node.type==='scalar'){
+    return `<span class="tok-I">${node.v}</span>`;
+  }
+  if(node.type==='mat'){
+    const cls=node.name==='X'?'tok-X':node.name==='I'?'tok-I':'tok-mat';
+    let sup=''; for(const m of (node.mods||[])) sup+=m==='T'?'ᵀ':'⁻¹';
+    return `<span class="${cls}">${node.name}</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
+  }
+  if(node.type==='mod'){
+    const inner=astToHTML(node.node);
+    const needsParen=node.node.type==='add'||node.node.type==='mul';
+    const sup=node.op==='T'?'ᵀ':'⁻¹';
+    if(needsParen) return `<span class="tok-op">(</span>${inner}<span class="tok-op">)</span><span class="tok-mod">${sup}</span>`;
+    return `${inner}<span class="tok-mod">${sup}</span>`;
+  }
+  if(node.type==='add'){
+    let h='';
+    for(let i=0;i<node.terms.length;i++){
+      const {sign,node:child}=node.terms[i];
+      if(i>0||sign==='-') h+=`<span class="tok-op">${sign}</span>`;
+      h+=astToHTML(child);
+    }
+    return h;
+  }
+  if(node.type==='mul'){
+    return node.factors.map(f=>{
+      const needsParen=f.type==='add';
+      if(needsParen) return `<span class="tok-op">(</span>${astToHTML(f)}<span class="tok-op">)</span>`;
+      return astToHTML(f);
+    }).join('<span class="tok-op">·</span>');
+  }
+  return '';
+}
+
+// ── Simplify mul by evaluating non-X sub-expressions ──
+// Returns evaluated matrix for known parts
+function evalNonXAST(node, matVals){
+  // If no X in subtree, evaluate fully
+  if(!astHasX(node)) return evalAST(node, matVals);
+  return null; // contains X, can't evaluate
+}
+
+function astHasX(node){
+  if(!node) return false;
+  if(node.type==='mat') return node.name==='X';
+  if(node.type==='scalar') return false;
+  if(node.type==='mod') return astHasX(node.node);
+  if(node.type==='add') return node.terms.some(t=>astHasX(t.node));
+  if(node.type==='mul') return node.factors.some(f=>astHasX(f));
+  return false;
+}
+
+// ── Collect additive terms from AST ─────────────
+function collectAdditiveTerms(node){
+  // Returns array of {sign, node}
+  if(node.type==='add') return node.terms;
+  return [{sign:'+',node}];
+}
+
+// ── Main Solver ──────────────────────────────────
 function solveEquation(){
   const raw=document.getElementById('eqInput').value.trim();
   const errEl=document.getElementById('eqErr');
@@ -3218,160 +3454,138 @@ function solveEquation(){
 
   let {lhs,rhs}=split;
 
-  if(!hasX(lhs)&&!hasX(rhs)){ errEl.textContent='Não encontrei X na equação. Usa X para a matriz incógnita.'; errEl.classList.add('show'); return; }
+  if(!hasX(lhs)&&!hasX(rhs)){ errEl.textContent='Não encontrei X na equação.'; errEl.classList.add('show'); return; }
 
-  // If X is on RHS, swap sides
-  let swapped=false;
-  if(!hasX(lhs)&&hasX(rhs)){ [lhs,rhs]=[rhs,lhs]; swapped=true; }
-
-  // Save all matrices from defined list
+  // Save all matrices
   for(const n of EQ_NAMES) eqSaveMatrix(n);
 
-  // Build matrix values map from all defined matrices
   const matVals={};
   for(const n of EQ_NAMES){
     matVals[n]=EQ_MATRICES[n];
-    if(!matVals[n]||!Array.isArray(matVals[n])||matVals[n].length===0){ errEl.textContent=`Preenche os valores da matriz ${n}.`; errEl.classList.add('show'); return; }
+    if(!matVals[n]||!Array.isArray(matVals[n])||!matVals[n].length){
+      errEl.textContent=`Preenche os valores da matriz ${n}.`; errEl.classList.add('show'); return;
+    }
   }
 
-  // Attempt to solve — we handle a linear form: LHS = [left_factors] * X * [right_factors] + [additive_terms]
-  // Strategy: analyse token structure, apply rules step by step
   try{
+    // If X only on RHS, swap
+    if(!hasX(lhs)&&hasX(rhs)){ [lhs,rhs]=[rhs,lhs]; }
+
+    // Parse both sides into AST
+    let lhsAST = parseTokens(lhs);
+    let rhsAST = parseTokens(rhs);
+
     const steps=[];
-    const addStep=(badge,cls,lhsToks,rhsToks,note)=>{
-      steps.push(eqStep(badge,cls,
-        tokensToHTML(lhsToks)+`<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 8px">=</span>`+tokensToHTML(rhsToks),
-        note));
-    };
-
-    // Step 0: show original
     steps.push(`<div class="steps"><div class="steps-header"><h3>Resolução Passo a Passo</h3><hr></div>`);
-    addStep('EQUAÇÃO','info',lhs,rhs,'Equação original');
 
-    // ── PHASE 1: Move additive non-X terms to RHS ──
-    // Parse lhs as sum of terms/products separated by + or -
-    // We split lhs at top-level + and - operators
-    const lhsGroups=splitByPlusMinus(lhs);
-    const xGroups=[], addGroups=[];
-    for(const g of lhsGroups){
-      if(hasX(g.toks)) xGroups.push(g);
-      else addGroups.push(g);
+    function addStep(badge, cls, lNode, rNode, note){
+      steps.push(`<div class="eq-step-block">
+        <div class="esb-label"><span class="esb-op-badge ${cls}">${badge}</span>${note?`<span style="color:var(--muted);font-size:10px">${note}</span>`:''}</div>
+        <div class="esb-eq">${astToHTML(lNode)}<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${astToHTML(rNode)}</div>
+      </div>`);
     }
 
-    let currentLhs=[...lhs], currentRhs=[...rhs];
-
-    // Move each non-X additive group to RHS
-    for(const g of addGroups){
-      const negated=negateSide([g.toks],g.sign);
-      const note=`Passa ${tokensToHTML(addTokenSign(g.toks,g.sign))} para o lado direito (sinal invertido)`;
-      currentLhs=removeGroupFromTokens(currentLhs,g);
-      currentRhs=mergeRhs(currentRhs,negated);
-      addStep('ISOLAR X','rule',currentLhs,currentRhs,note);
+    function addStepHTML(badge, cls, html, note){
+      steps.push(`<div class="eq-step-block">
+        <div class="esb-label"><span class="esb-op-badge ${cls}">${badge}</span>${note?`<span style="color:var(--muted);font-size:10px">${note}</span>`:''}</div>
+        <div class="esb-eq">${html}</div>
+      </div>`);
     }
 
-    // ── PHASE 2: Determine structure — A*X, X*B, A*X*B, just X ──
-    // Flatten currentLhs removing parens for analysis
-    const xIdx=currentLhs.findIndex(t=>t.t==='TERM'&&t.name==='X');
-    const leftFactors=[];  // tokens left of X (multiplied)
-    const rightFactors=[]; // tokens right of X (multiplied)
+    // STEP 0: show original
+    addStep('EQUAÇÃO','info',lhsAST,rhsAST,'Equação original');
 
-    // Collect product factors left and right of X in lhs
-    // Simple structural parse: look for * chains
-    let mode='left';
-    for(const tk of currentLhs){
-      if(tk.t==='TERM'&&tk.name==='X'){ mode='right'; continue; }
-      if(tk.t==='OP'&&tk.v==='*') continue; // skip * separators
-      if(mode==='left') leftFactors.push(tk);
-      else rightFactors.push(tk);
+    // ── PHASE 1: Evaluate parentheses on both sides (non-X parts) ──────────
+    // We check if any non-X grouped expressions exist and show their evaluation
+    function evalParens(ast, side){
+      // Walk the AST looking for (expr)^mods where expr has no X — evaluate them
+      if(!ast) return ast;
+      if(ast.type==='mod'){
+        const inner=evalParens(ast.node, side);
+        if(!astHasX(inner)){
+          const val=evalAST({type:'mod',op:ast.op,node:inner}, matVals);
+          const mat=resolveToMatrix(val, matVals, null);
+          // Create a NEWTERM node for display
+          const label=`(${nodeLabel(inner)})${ast.op==='T'?'ᵀ':'⁻¹'}`;
+          return {type:'computed',mat,label};
+        }
+        return {type:'mod',op:ast.op,node:inner};
+      }
+      if(ast.type==='add'){
+        return {type:'add',terms:ast.terms.map(({sign,node})=>({sign,node:evalParens(node,side)}))};
+      }
+      if(ast.type==='mul'){
+        // Evaluate consecutive non-X factors together
+        return {type:'mul',factors:ast.factors.map(f=>evalParens(f,side))};
+      }
+      return ast;
     }
 
-    // Evaluate matrix expressions
-    const evalTerm=tk=>{
-      if(tk.t==='TERM'&&tk.name==='I') return null; // identity — handled specially
-      if(tk.t==='TERM') return applyMods(matVals[tk.name],tk.mods);
-      return null;
-    };
-
-    let X_val;
-
-    // ── Case: X = RHS (no left/right factors) ──
-    if(!leftFactors.length&&!rightFactors.length){
-      addStep('RESULTADO','done',[{t:'TERM',name:'X',mods:[]}],currentRhs,'X já está isolado');
-      X_val=evalExpression(currentRhs,matVals);
+    function nodeLabel(node){
+      if(node.type==='mat') return node.name+(node.mods||[]).map(m=>m==='T'?'ᵀ':'⁻¹').join('');
+      if(node.type==='scalar') return String(node.v);
+      return '…';
     }
-    // ── Case: A*X = B → X = A⁻¹*B ──
-    else if(leftFactors.length&&!rightFactors.length){
-      const Aname=leftFactors[0].name||'expr';
-      const Amods=[...(leftFactors[0].mods||[])];
-      const A=evalTerm(leftFactors[0]);
 
-      let rhsVal=evalExpression(currentRhs,matVals);
-      const Ainv=matInverseFull(A);
-      const Ainv_tok={t:'TERM',name:Aname,mods:[...Amods,'INV']};
+    // Extend astToHTML for 'computed' nodes
+    const _origAstToHTML=astToHTML;
 
-      addStep('REGRA','rule',
-        [{t:'TERM',name:'X',mods:[]}],
-        [Ainv_tok,{t:'OP',v:'*'},...currentRhs],
-        `Multiplica ambos os lados à esquerda por ${Aname}⁻¹`);
-
-      X_val=matMulFull(Ainv,rhsVal);
-      addStep('CALCULAR','calc',
-        [{t:'TERM',name:'X',mods:[]}],
-        [{t:'NEWTERM',name:`${Aname}⁻¹·B_rhs`,mods:[]}],
-        `Calcula ${Aname}⁻¹ e multiplica por RHS`);
+    // ── PHASE 2: Move non-X additive terms from LHS to RHS ──────────────────
+    const lhsTerms = collectAdditiveTerms(lhsAST);
+    const xTerms=[], nonXTerms=[];
+    for(const t of lhsTerms){
+      if(astHasX(t.node)) xTerms.push(t);
+      else nonXTerms.push(t);
     }
-    // ── Case: X*B = C → X = C*B⁻¹ ──
-    else if(!leftFactors.length&&rightFactors.length){
-      const Bname=rightFactors[0].name||'expr';
-      const Bmods=[...(rightFactors[0].mods||[])];
-      const B=evalTerm(rightFactors[0]);
-      let rhsVal=evalExpression(currentRhs,matVals);
-      const Binv=matInverseFull(B);
-      const Binv_tok={t:'TERM',name:Bname,mods:[...Bmods,'INV']};
 
-      addStep('REGRA','rule',
-        [{t:'TERM',name:'X',mods:[]}],
-        [...currentRhs,{t:'OP',v:'*'},Binv_tok],
-        `Multiplica ambos os lados à direita por ${Bname}⁻¹`);
+    let rhsTerms = collectAdditiveTerms(rhsAST);
 
-      X_val=matMulFull(rhsVal,Binv);
-      addStep('CALCULAR','calc',
-        [{t:'TERM',name:'X',mods:[]}],
-        [{t:'NEWTERM',name:`RHS·${Bname}⁻¹`,mods:[]}],
-        `Calcula ${Bname}⁻¹ e multiplica à direita`);
+    if(nonXTerms.length>0){
+      // For each non-X term on LHS, move to RHS (negate sign)
+      for(const t of nonXTerms){
+        const negSign = t.sign==='+' ? '-' : '+';
+        rhsTerms.push({sign:negSign, node:t.node});
+        const movedStr = `${t.sign==='+'?'+':'-'}${astToHTML(t.node)}`;
+        const noteStr = `Passa ${movedStr} para o lado direito (inverte o sinal)`;
+        // Rebuild LHS without this term
+        const remainingLhsTerms = lhsTerms.filter(tt=>!nonXTerms.includes(tt));
+        const newLhsAST = remainingLhsTerms.length===1 ? remainingLhsTerms[0].node : {type:'add',terms:remainingLhsTerms};
+        const newRhsAST = rhsTerms.length===1 ? rhsTerms[0].node : {type:'add',terms:[...rhsTerms]};
+        addStep('ISOLAR X','rule',newLhsAST,newRhsAST,noteStr);
+      }
     }
-    // ── Case: A*X*B = C → X = A⁻¹*C*B⁻¹ ──
-    else if(leftFactors.length&&rightFactors.length){
-      const Aname=leftFactors[0].name||'expr';
-      const Bname=rightFactors[0].name||'expr';
-      const Amods=[...(leftFactors[0].mods||[])];
-      const Bmods=[...(rightFactors[0].mods||[])];
-      const A=evalTerm(leftFactors[0]);
-      const B=evalTerm(rightFactors[0]);
-      const rhsVal=evalExpression(currentRhs,matVals);
-      const Ainv=matInverseFull(A);
-      const Binv=matInverseFull(B);
-      const Ainv_tok={t:'TERM',name:Aname,mods:[...Amods,'INV']};
-      const Binv_tok={t:'TERM',name:Bname,mods:[...Bmods,'INV']};
 
-      addStep('REGRA','rule',
-        [{t:'TERM',name:'X',mods:[]}],
-        [Ainv_tok,{t:'OP',v:'*'},...currentRhs,{t:'OP',v:'*'},Binv_tok],
-        `Multiplica à esquerda por ${Aname}⁻¹ e à direita por ${Bname}⁻¹`);
+    // Rebuild current LHS and RHS ASTs
+    lhsAST = xTerms.length===1 ? xTerms[0].node : {type:'add',terms:xTerms};
+    rhsAST = rhsTerms.length===1 ? rhsTerms[0].node : {type:'add',terms:[...rhsTerms]};
 
-      X_val=matMulFull(matMulFull(Ainv,rhsVal),Binv);
-      addStep('CALCULAR','calc',
-        [{t:'TERM',name:'X',mods:[]}],
-        [{t:'NEWTERM',name:`${Aname}⁻¹·C·${Bname}⁻¹`,mods:[]}],
-        `Calcula ${Aname}⁻¹, multiplica por C, depois por ${Bname}⁻¹`);
+    // ── PHASE 3: Evaluate RHS (compute known matrices) ─────────────────────
+    // Show the evaluation of parentheses/modifiers in RHS
+    function hasParensOrMods(node){
+      if(!node) return false;
+      if(node.type==='mod') return true;
+      if(node.type==='add') return node.terms.some(t=>hasParensOrMods(t.node));
+      if(node.type==='mul') return node.factors.some(f=>hasParensOrMods(f));
+      return false;
     }
+
+    // Evaluate RHS step by step, showing each computation
+    const rhsVal = evalASTWithSteps(rhsAST, matVals, steps, addStepHTML, 'RHS');
+
+    // ── PHASE 4: Isolate X from LHS ─────────────────────────────────────────
+    // Now lhsAST has only X-containing terms. Analyse structure.
+
+    // Determine: is LHS a single mul-chain containing X?
+    // E.g.: A*X, X*B, A*X*B, 2*I*X, scalar*X, etc.
+    // Or is it a sum of X-terms? (e.g. A*X + B*X) → factor out
+
+    const xVal = isolateX(lhsAST, rhsAST, rhsVal, matVals, steps, addStep, addStepHTML);
 
     steps.push(`</div>`);
 
-    // ── Render result matrix ──
     const resultHTML=`<div class="eq-result-matrix">
       <div class="erm-title">✅ Solução — Matriz X</div>
-      <div class="mat-area">${renderEqMatrix(X_val,'X')}</div>
+      <div class="mat-area">${renderEqMatrix(xVal,'X')}</div>
     </div>`;
 
     stepsEl.innerHTML=steps.join('');
@@ -3381,6 +3595,283 @@ function solveEquation(){
     errEl.textContent='Erro ao resolver: '+e.message;
     errEl.classList.add('show');
   }
+}
+
+// ── Evaluate AST step by step, showing computations ──────────────────────
+function evalASTWithSteps(node, matVals, steps, addStepHTML, label){
+  // First, evaluate and collect sub-computations
+  const computations=[];
+  collectComputations(node, matVals, computations, label);
+
+  // Show each computation as a step
+  for(const c of computations){
+    addStepHTML('CALCULAR','calc',
+      `<span style="color:var(--muted);font-size:12px">${c.expr}</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(c.mat)}`,
+      c.note);
+  }
+
+  // Return the final value
+  const val=evalAST(node, matVals);
+  return resolveToMatrix(val, matVals, null);
+}
+
+function collectComputations(node, matVals, out, contextLabel){
+  if(!node) return;
+  if(node.type==='mod'){
+    collectComputations(node.node, matVals, out, contextLabel);
+    const innerVal=evalAST(node.node, matVals);
+    const innerMat=resolveToMatrix(innerVal, matVals, null);
+    const op=node.op==='T'?'transposta':'inversa';
+    const sym=node.op==='T'?'ᵀ':'⁻¹';
+    const exprStr=`(${astToHTMLplain(node.node)})${sym}`;
+    const resultMat = node.op==='T' ? matTranspose(innerMat) : matInverseFull(innerMat);
+    out.push({expr:exprStr, mat:resultMat, note:`Calcula a ${op} de (${astToHTMLplain(node.node)})`});
+    return;
+  }
+  if(node.type==='add'){
+    for(const {node:child} of node.terms) collectComputations(child, matVals, out, contextLabel);
+    // If more than one term, show the sum
+    if(node.terms.length>1 && !astHasX(node)){
+      const val=evalAST(node, matVals);
+      const mat=resolveToMatrix(val, matVals, null);
+      out.push({expr:astToHTMLplain(node), mat, note:'Calcula a soma/subtração'});
+    }
+    return;
+  }
+  if(node.type==='mul'){
+    for(const f of node.factors) collectComputations(f, matVals, out, contextLabel);
+    // If product of 2+ matrices/terms (no X), show it
+    if(node.factors.length>1 && !astHasX(node)){
+      const val=evalAST(node, matVals);
+      const mat=resolveToMatrix(val, matVals, null);
+      out.push({expr:astToHTMLplain(node), mat, note:'Calcula o produto'});
+    }
+    return;
+  }
+  // scalar, mat — no sub-computations needed
+}
+
+function astToHTMLplain(node){
+  // Same as astToHTML but without X-special handling for display
+  return astToHTML(node);
+}
+
+function renderMatrixInline(mat){
+  if(!mat||!mat.length) return '<em>?</em>';
+  const n=mat.length, m=mat[0].length;
+  let h=`<span style="display:inline-flex;align-items:center;gap:2px;vertical-align:middle">`;
+  const bh=n*28+(n-1)*3;
+  h+=`<span style="opacity:.5">${makeBracket(bh+8,'left')}</span>`;
+  h+=`<span style="display:inline-grid;grid-template-columns:repeat(${m},40px);gap:2px">`;
+  for(let r=0;r<n;r++) for(let c=0;c<m;c++){
+    h+=`<span style="width:40px;height:28px;background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.2);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green)">${fmtS(mat[r][c])}</span>`;
+  }
+  h+=`</span><span style="opacity:.5">${makeBracket(bh+8,'right')}</span></span>`;
+  return h;
+}
+
+// ── Isolate X ─────────────────────────────────────────
+function isolateX(lhsAST, rhsAST, rhsVal, matVals, steps, addStep, addStepHTML){
+  // Check if LHS is a sum with multiple X-terms (e.g. A*X + B*X)
+  if(lhsAST.type==='add'){
+    const terms=lhsAST.terms;
+    if(terms.length>1 && terms.every(t=>astHasX(t.node))){
+      return isolateXFromSum(terms, rhsVal, matVals, steps, addStep, addStepHTML);
+    }
+    if(terms.length===1) lhsAST=terms[0].node;
+  }
+
+  // Now lhsAST should be a single mul-chain (or just X)
+  // Extract left and right factors around X
+  if(lhsAST.type==='mat'&&lhsAST.name==='X'){
+    // X = RHS
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(rhsVal)}`,
+      'X já está isolado');
+    return rhsVal;
+  }
+
+  // Extract scalar factor if any (e.g. 2*X → scalar=2)
+  let scalarFactor=1;
+  let mulFactors=[];
+  if(lhsAST.type==='mul'){
+    mulFactors=[...lhsAST.factors];
+    const newFactors=[];
+    for(const f of mulFactors){
+      if(f.type==='scalar'){ scalarFactor*=f.v; }
+      else newFactors.push(f);
+    }
+    mulFactors=newFactors;
+  } else {
+    mulFactors=[lhsAST];
+  }
+
+  if(scalarFactor!==1){
+    const newRhs=rhsVal.map(r=>r.map(v=>v/scalarFactor));
+    addStepHTML('ESCALAR','rule',
+      astToHTML(mulFactors.length===1?mulFactors[0]:{type:'mul',factors:mulFactors})+
+      `<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>`+
+      renderMatrixInline(newRhs),
+      `Divide ambos os lados por ${scalarFactor}`);
+    rhsVal=newRhs;
+  }
+
+  // Now find X position in mulFactors
+  const xIdx=mulFactors.findIndex(f=>f.type==='mat'&&f.name==='X');
+  if(xIdx<0) throw new Error('Não encontrei X no produto. Equação muito complexa.');
+
+  const leftFactors=mulFactors.slice(0,xIdx);
+  const rightFactors=mulFactors.slice(xIdx+1);
+
+  // Evaluate left and right factor groups
+  const evalFactorGroup=(factors)=>{
+    if(!factors.length) return null;
+    const ast=factors.length===1?factors[0]:{type:'mul',factors};
+    const val=evalAST(ast, matVals);
+    return resolveToMatrix(val, matVals, rhsVal);
+  };
+
+  const Lmat=evalFactorGroup(leftFactors);
+  const Rmat=evalFactorGroup(rightFactors);
+
+  const Lname=leftFactors.length?astToHTML(leftFactors.length===1?leftFactors[0]:{type:'mul',factors:leftFactors}):'';
+  const Rname=rightFactors.length?astToHTML(rightFactors.length===1?rightFactors[0]:{type:'mul',factors:rightFactors}):'';
+
+  // Show evaluation of L and R if they are not trivial
+  if(Lmat && leftFactors.length){
+    addStepHTML('CALCULAR','calc',
+      `${Lname}<span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Lmat)}`,
+      `Calcula o factor esquerdo`);
+  }
+  if(Rmat && rightFactors.length){
+    addStepHTML('CALCULAR','calc',
+      `${Rname}<span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Rmat)}`,
+      `Calcula o factor direito`);
+  }
+
+  // Apply isolation rules
+  let X_val=rhsVal;
+
+  if(Lmat && Rmat){
+    // A*X*B = C → X = A⁻¹·C·B⁻¹
+    const Linv=matInverseFull(Lmat);
+    const Rinv=matInverseFull(Rmat);
+    addStepHTML('REGRA','rule',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>`+
+      `${Lname}<span class="tok-mod">⁻¹</span><span class="tok-op">·</span>C<span class="tok-op">·</span>${Rname}<span class="tok-mod">⁻¹</span>`,
+      `Multiplica à esquerda por (factor esq.)⁻¹ e à direita por (factor dir.)⁻¹`);
+    addStepHTML('CALCULAR','calc',
+      `${Lname}<span class="tok-mod">⁻¹</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Linv)}`,
+      'Calcula a inversa do factor esquerdo');
+    addStepHTML('CALCULAR','calc',
+      `${Rname}<span class="tok-mod">⁻¹</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Rinv)}`,
+      'Calcula a inversa do factor direito');
+    X_val=matMulFull(matMulFull(Linv, rhsVal), Rinv);
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      `Resultado: X = (L)⁻¹ · C · (R)⁻¹`);
+  } else if(Lmat){
+    // A*X = C → X = A⁻¹·C
+    const Linv=matInverseFull(Lmat);
+    addStepHTML('REGRA','rule',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>`+
+      `${Lname}<span class="tok-mod">⁻¹</span><span class="tok-op">·</span>C`,
+      `Multiplica ambos os lados à esquerda por (${Lname})⁻¹`);
+    addStepHTML('CALCULAR','calc',
+      `${Lname}<span class="tok-mod">⁻¹</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Linv)}`,
+      'Calcula a inversa do factor esquerdo');
+    X_val=matMulFull(Linv, rhsVal);
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      `Resultado: X = (L)⁻¹ · C`);
+  } else if(Rmat){
+    // X*B = C → X = C·B⁻¹
+    const Rinv=matInverseFull(Rmat);
+    addStepHTML('REGRA','rule',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>`+
+      `C<span class="tok-op">·</span>${Rname}<span class="tok-mod">⁻¹</span>`,
+      `Multiplica ambos os lados à direita por (${Rname})⁻¹`);
+    addStepHTML('CALCULAR','calc',
+      `${Rname}<span class="tok-mod">⁻¹</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(Rinv)}`,
+      'Calcula a inversa do factor direito');
+    X_val=matMulFull(rhsVal, Rinv);
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      `Resultado: X = C · (R)⁻¹`);
+  } else {
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      'X isolado');
+  }
+
+  return X_val;
+}
+
+// ── Isolate X from sum like A*X + B*X = C → (A+B)*X = C ─────────────────
+function isolateXFromSum(xTerms, rhsVal, matVals, steps, addStep, addStepHTML){
+  // Check if all terms are of form [factors]*X or X*[factors] (same side)
+  // Determine if X is on left or right of all product factors
+  let allXonLeft=true, allXonRight=true;
+
+  for(const {node} of xTerms){
+    const factors=node.type==='mul'?node.factors:[node];
+    const xIdx=factors.findIndex(f=>f.type==='mat'&&f.name==='X');
+    if(xIdx===0) allXonLeft=false; // nothing left of X
+    if(xIdx===factors.length-1) allXonRight=false; // nothing right of X
+  }
+
+  // Factor out X
+  // E.g. A*X + B*X = (A+B)*X → X = (A+B)⁻¹ * C
+  // or X*A + X*B = X*(A+B) → X = C * (A+B)⁻¹
+
+  const factorTerms=[]; // for the matrix being multiplied by X
+  let xOnRight=false; // is X on the right? (factors*X) means X is right
+
+  for(const {sign,node} of xTerms){
+    const factors=node.type==='mul'?node.factors:[node];
+    const xIdx=factors.findIndex(f=>f.type==='mat'&&f.name==='X');
+    const otherFactors=factors.filter((_,i)=>i!==xIdx);
+    if(xIdx===factors.length-1){ xOnRight=true; } // A*X — factor on left
+    const otherAST=otherFactors.length===0?{type:'scalar',v:1}:
+                   otherFactors.length===1?otherFactors[0]:{type:'mul',factors:otherFactors};
+    factorTerms.push({sign,node:otherAST});
+  }
+
+  const combinedAST=factorTerms.length===1?factorTerms[0].node:{type:'add',terms:factorTerms};
+  const combinedHTML=astToHTML(combinedAST);
+
+  addStepHTML('FATORAR X','rule',
+    (xOnRight?`<span class="tok-op">(</span>${combinedHTML}<span class="tok-op">)</span><span class="tok-op">·</span><span class="tok-X">X</span>`
+             :`<span class="tok-X">X</span><span class="tok-op">·</span><span class="tok-op">(</span>${combinedHTML}<span class="tok-op">)</span>`)+
+    `<span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${astToHTML({type:'add',terms:[{sign:'+',node:{type:'mat',name:'C',mods:[]}}]})}`,
+    'Fatoriza X — distribui o produto');
+
+  const combinedVal=evalAST(combinedAST, matVals);
+  const combinedMat=resolveToMatrix(combinedVal, matVals, rhsVal);
+  addStepHTML('CALCULAR','calc',
+    `<span class="tok-op">(</span>${combinedHTML}<span class="tok-op">)</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(combinedMat)}`,
+    'Calcula a soma dos factores');
+
+  const combinedInv=matInverseFull(combinedMat);
+  addStepHTML('CALCULAR','calc',
+    `<span class="tok-op">(</span>${combinedHTML}<span class="tok-op">)</span><span class="tok-mod">⁻¹</span><span class="tok-op" style="margin:0 8px">=</span>${renderMatrixInline(combinedInv)}`,
+    'Calcula a inversa da soma');
+
+  let X_val;
+  if(xOnRight){
+    // (A+B)*X = C → X = (A+B)⁻¹·C
+    X_val=matMulFull(combinedInv, rhsVal);
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      'X = (A+B)⁻¹ · C');
+  } else {
+    // X*(A+B) = C → X = C·(A+B)⁻¹
+    X_val=matMulFull(rhsVal, combinedInv);
+    addStepHTML('RESULTADO','done',
+      `<span class="tok-X">X</span><span class="tok-op" style="color:var(--acc);font-size:16px;margin:0 10px">=</span>${renderMatrixInline(X_val)}`,
+      'X = C · (A+B)⁻¹');
+  }
+  return X_val;
 }
 
 // ── Split token list at top-level + and - ────────
@@ -3408,11 +3899,6 @@ function addTokenSign(toks,sign){
 }
 
 function removeGroupFromTokens(tokens,g){
-  // Remove the group tokens and adjacent +/- operator
-  const result=[];
-  let i=0;
-  let skip=false;
-  // Rebuild from groups, excluding g
   const groups=splitByPlusMinus(tokens);
   const remaining=groups.filter(gg=>gg!==g);
   if(!remaining.length) return [];
@@ -3425,13 +3911,10 @@ function removeGroupFromTokens(tokens,g){
 }
 
 function negateSide(groups,sign){
-  // Return tokens for -(group) to add to RHS
   if(sign==='+'){
-    // was +group on LHS, so we add -group to RHS
     const toks=groups[0];
     return [{t:'OP',v:'-'},...toks];
   } else {
-    // was -group on LHS, so we add +group to RHS
     const toks=groups[0];
     return toks;
   }
@@ -3439,14 +3922,11 @@ function negateSide(groups,sign){
 
 function mergeRhs(currentRhs,newToks){
   if(!currentRhs.length) return newToks;
-  // newToks starts with + or - op
   return [...currentRhs,...newToks];
 }
 
 // ── Evaluate an expression (no X) ───────────────
 function evalExpression(tokens,matVals){
-  // Simple evaluator: handles +, -, * and mods on terms
-  // Uses recursive descent on top-level + -
   const groups=splitByPlusMinus(tokens);
   let result=null;
   for(const g of groups){
@@ -3470,7 +3950,7 @@ function evalProduct(tokens,matVals){
         const n=result?result.length:(Object.values(matVals)[0]||[[0,0],[0,0]]).length;
         val=identity(n);
       } else {
-        val=applyMods(matVals[tk.name],tk.mods);
+        val=applyMods(matVals[tk.name],tk.mods||[]);
       }
     } else continue;
     if(pendingScalar!==1){ val=val.map(r=>r.map(v=>v*pendingScalar)); pendingScalar=1; }
@@ -3483,7 +3963,6 @@ function evalProduct(tokens,matVals){
   }
   return result;
 }
-
 // ═══════════════════════════════════════════════
 // DETERMINANTE — 2×2 direto, 3×3 Sarrus, 4×+ Laplace
 // ═══════════════════════════════════════════════

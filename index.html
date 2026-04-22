@@ -906,81 +906,6 @@ a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--borde
     </div>
   </div>
 
-  <!-- Operações disponíveis -->
-  <div>
-    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-      ⚡ Operações disponíveis
-      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
-    </div>
-    <div class="home-grid">
-      <div class="home-card" onclick="showPage('determinante')">
-        <div class="card-icon">🔢</div>
-        <h3>Determinante</h3>
-        <p>Método direto (2×2), Sarrus (3×3) e Laplace com menores e cofatores (4×4+).</p>
-        <span class="card-tag" style="background:rgba(108,99,255,.15);color:var(--acc)">🆕 Novo</span>
-      </div>
-      <div class="home-card" onclick="showPage('adjunta')">
-        <div class="card-icon">🔳</div>
-        <h3>Adjunta</h3>
-        <p>Calcula a adjunta mostrando cada menor complementar e cofator algébrico.</p>
-        <span class="card-tag" style="background:rgba(255,99,200,.15);color:var(--acc2)">🆕 Novo</span>
-      </div>
-      <div class="home-card" onclick="showPage('mult')">
-        <div class="card-icon">➕</div>
-        <h3>Operações Simples</h3>
-        <p>Soma, subtração e multiplicação de matrizes. Encadeia C, D, E... com a operação que escolheres.</p>
-        <span class="card-tag">A + B, A − B, A × B</span>
-      </div>
-      <div class="home-card" onclick="showPage('gauss')">
-        <div class="card-icon">🔺</div>
-        <h3>Eliminação de Gauss</h3>
-        <p>Obtém a forma triangular superior com pivotagem parcial. Calcula o determinante como produto da diagonal.</p>
-        <span class="card-tag">Triangular</span>
-      </div>
-      <div class="home-card" onclick="showPage('dodgson')">
-        <div class="card-icon">🔷</div>
-        <h3>Condensação de Dodgson</h3>
-        <p>Método de Lewis Carroll para calcular determinantes por condensação iterativa.</p>
-        <span class="card-tag">Determinante</span>
-      </div>
-      <div class="home-card" onclick="showPage('inverse')">
-        <div class="card-icon">↩️</div>
-        <h3>Inversa (Gauss-Jordan)</h3>
-        <p>Calcula A⁻¹ pelo método de Gauss-Jordan com a matriz aumentada [A|I].</p>
-        <span class="card-tag">A⁻¹</span>
-      </div>
-      <div class="home-card" onclick="showPage('transpose')">
-        <div class="card-icon">🔄</div>
-        <h3>Transposta</h3>
-        <p>Calcula a transposta Aᵀ trocando linhas por colunas.</p>
-        <span class="card-tag">Aᵀ</span>
-      </div>
-      <div class="home-card" onclick="showPage('power')">
-        <div class="card-icon">⚡</div>
-        <h3>Potência de Matriz</h3>
-        <p>Calcula Aⁿ por multiplicação iterativa. Mostra cada passo intermédio.</p>
-        <span class="card-tag">Aⁿ</span>
-      </div>
-      <div class="home-card" onclick="showPage('props')">
-        <div class="card-icon">🔬</div>
-        <h3>Propriedades</h3>
-        <p>Traço, rank, norma, simetria, diagonal e outras propriedades de uma matriz.</p>
-        <span class="card-tag">Análise</span>
-      </div>
-      <div class="home-card" onclick="showPage('equacoes')">
-        <div class="card-icon">🧮</div>
-        <h3>Equações Matriciais</h3>
-        <p>Resolve equações com X, transposta, inversa e parênteses.</p>
-        <span class="card-tag">X = ?</span>
-      </div>
-      <div class="home-card" onclick="showPage('teoria')">
-        <div class="card-icon">📖</div>
-        <h3>Teoria</h3>
-        <p>Guia completo: notação, tipos de matrizes, operações, determinantes e mais.</p>
-        <span class="card-tag">Aprender</span>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- DETERMINANTE -->
@@ -1278,46 +1203,67 @@ a.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--borde
   <div class="page-header">
     <div class="back" onclick="showPage('home')">← Início</div>
     <h2>Equações Matriciais</h2>
-    <p>Escreve a equação, define as matrizes conhecidas e o programa isola X passo a passo.</p>
+    <p>Define as matrizes do exercício, escreve a equação e o programa isola <strong>X</strong> passo a passo. <strong>I</strong> é sempre a matriz identidade.</p>
   </div>
 
-  <!-- INPUT DA EQUAÇÃO -->
-  <div class="eq-input-area">
-    <label>Equação (escreve usando A, B, C... para matrizes conhecidas, X para a incógnita, I para identidade)</label>
-    <div class="eq-input-wrap">
-      <input class="eq-input" id="eqInput" placeholder="Ex: A*X*B = C  ou  X*A' + B = C  ou  (A+B)*X = C" oninput="eqPreview()">
-      <button class="btn-primary" onclick="solveEquation()">Resolver</button>
-      <button class="btn-secondary" onclick="clearEquation()">Limpar</button>
+  <!-- PASSO 1 — MATRIZES -->
+  <div style="margin-bottom:28px">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:var(--text)">
+      <span style="background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.35);border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--acc);flex-shrink:0">1</span>
+      Define as matrizes conhecidas
+      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
     </div>
-    <div class="eq-hint">
-      Notação: <code>*</code> multiplicação &nbsp;·&nbsp; <code>+</code> adição &nbsp;·&nbsp; <code>-</code> subtração &nbsp;·&nbsp;
-      <code>A'</code> ou <code>A^T</code> transposta &nbsp;·&nbsp; <code>A^-1</code> ou <code>inv(A)</code> inversa &nbsp;·&nbsp;
-      <code>(A+B)*X</code> parênteses &nbsp;·&nbsp; <code>X</code> incógnita &nbsp;·&nbsp; <code>I</code> identidade
+
+    <!-- Toolbar: adicionar / remover matrizes -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+      <button class="btn-rnd" style="font-size:11px" onclick="eqAddMatrix()">+ Adicionar Matriz</button>
+      <button class="btn-secondary" style="font-size:11px" onclick="eqRemoveMatrix()">− Remover Última</button>
+      <div style="font-size:10px;color:var(--muted);margin-left:4px">Matrizes disponíveis: <span id="eqMatNames" style="color:var(--acc);font-weight:600">A, B</span> &nbsp;+&nbsp; <span style="color:var(--gold)">I</span> (identidade)</div>
     </div>
-    <div class="eq-chips">
-      <div class="eq-chip" onclick="eqInsert('A*X = B')">A·X = B</div>
-      <div class="eq-chip" onclick="eqInsert('X*A = B')">X·A = B</div>
-      <div class="eq-chip" onclick="eqInsert('A*X*B = C')">A·X·B = C</div>
-      <div class="eq-chip" onclick="eqInsert('A*X + B = C')">A·X + B = C</div>
-      <div class="eq-chip" onclick="eqInsert('X + A = B')">X + A = B</div>
-      <div class="eq-chip" onclick="eqInsert('A\'*X = B')">Aᵀ·X = B</div>
-      <div class="eq-chip" onclick="eqInsert('(A+B)*X = C')">(A+B)·X = C</div>
-      <div class="eq-chip" onclick="eqInsert('A*X*A\' = B')">A·X·Aᵀ = B</div>
-    </div>
+
+    <!-- Container das grelhas de matrizes -->
+    <div id="eqMatDefs" style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start"></div>
   </div>
 
-  <!-- PREVIEW DA EQUAÇÃO PARSEADA -->
-  <div class="eq-parsed-display" id="eqParsed" style="display:none">
-    <div class="epd-label">Equação reconhecida</div>
-    <div class="epd-eq" id="eqParsedEq"></div>
+  <!-- PASSO 2 — EQUAÇÃO -->
+  <div style="margin-bottom:24px">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:var(--text)">
+      <span style="background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.35);border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--acc);flex-shrink:0">2</span>
+      Escreve a equação
+      <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+
+    <div class="eq-input-area">
+      <div class="eq-input-wrap">
+        <input class="eq-input" id="eqInput" placeholder="Ex: A*X = B  ou  A*X*B = C  ou  X*A' + B = C" oninput="eqPreview()">
+        <button class="btn-primary" onclick="solveEquation()">Resolver X</button>
+        <button class="btn-secondary" onclick="clearEquation()">Limpar</button>
+      </div>
+      <div class="eq-hint">
+        <code>*</code> multiplicação &nbsp;·&nbsp; <code>+</code> adição &nbsp;·&nbsp; <code>-</code> subtração &nbsp;·&nbsp;
+        <code>A'</code> ou <code>A^T</code> transposta &nbsp;·&nbsp; <code>A^-1</code> ou <code>inv(A)</code> inversa &nbsp;·&nbsp;
+        <code>X</code> incógnita &nbsp;·&nbsp; <code>I</code> identidade &nbsp;·&nbsp; parênteses <code>(A+B)*X</code>
+      </div>
+      <div class="eq-chips">
+        <div class="eq-chip" onclick="eqInsert('A*X = B')">A·X = B</div>
+        <div class="eq-chip" onclick="eqInsert('X*A = B')">X·A = B</div>
+        <div class="eq-chip" onclick="eqInsert('A*X*B = C')">A·X·B = C</div>
+        <div class="eq-chip" onclick="eqInsert('A*X + B = C')">A·X + B = C</div>
+        <div class="eq-chip" onclick="eqInsert('X + A = B')">X + A = B</div>
+        <div class="eq-chip" onclick="eqInsert('A\'*X = B')">Aᵀ·X = B</div>
+        <div class="eq-chip" onclick="eqInsert('(A+B)*X = C')">(A+B)·X = C</div>
+        <div class="eq-chip" onclick="eqInsert('A*X*A\' = B')">A·X·Aᵀ = B</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="eq-parsed-display" id="eqParsed" style="display:none;margin-top:14px">
+      <div class="epd-label">Equação reconhecida</div>
+      <div class="epd-eq" id="eqParsedEq"></div>
+    </div>
   </div>
 
   <div id="eqErr" class="err"></div>
-
-  <!-- INPUTS DAS MATRIZES -->
-  <div id="eqMatInputs"></div>
-
-  <!-- PASSOS E RESULTADO -->
   <div id="eqSteps"></div>
   <div id="eqResult"></div>
 </section>
@@ -2967,7 +2913,26 @@ function tokenize(raw){
       continue;
     }
     if(ch==='='){ tokens.push({t:'EQ'}); i++; continue; }
-    if(ch==='+'||ch==='-'||ch==='*'){ tokens.push({t:'OP',v:ch}); i++; continue; }
+    if(ch==='+'||ch==='*'){ tokens.push({t:'OP',v:ch}); i++; continue; }
+    // Handle '-': unary minus before number or letter
+    if(ch==='-'){
+      const prev=tokens[tokens.length-1];
+      const isUnary=!prev||prev.t==='OP'||prev.t==='LPAREN'||prev.t==='EQ';
+      if(isUnary&&i+1<s.length&&(/[0-9.]/.test(s[i+1])||/[A-Z]/i.test(s[i+1]))){
+        tokens.push({t:'SCALAR',v:-1});
+        tokens.push({t:'OP',v:'*'});
+        i++; continue;
+      }
+      tokens.push({t:'OP',v:'-'}); i++; continue;
+    }
+    // Numbers — support implicit multiplication: 2A, 3I, -2I
+    if(/[0-9.]/.test(ch)){
+      let num='';
+      while(i<s.length&&/[0-9.]/.test(s[i])){ num+=s[i]; i++; }
+      tokens.push({t:'SCALAR',v:parseFloat(num)});
+      if(i<s.length&&/[A-Z]/i.test(s[i])) tokens.push({t:'OP',v:'*'});
+      continue;
+    }
     if(/[A-Z]/i.test(ch)){
       const name=ch.toUpperCase(); i++;
       const mods=[];
@@ -2992,6 +2957,8 @@ function tokensToHTML(tokens){
       let sup='';
       for(const m of tk.mods) sup+=m==='T'?'ᵀ':'⁻¹';
       h+=`<span class="${cls}">${tk.name}</span>${sup?`<span class="tok-mod">${sup}</span>`:''}`;
+    } else if(tk.t==='SCALAR'){
+      h+=`<span class="tok-I">${tk.v}</span>`;
     } else if(tk.t==='OP'){
       h+=`<span class="tok-op">${tk.v==='*'?'·':tk.v}</span>`;
     } else if(tk.t==='LPAREN'){
@@ -3043,6 +3010,9 @@ function matMulFull(A,B){
 
 function matInverseFull(A){
   const n=A.length;
+  // Check det before attempting inversion — gives a clearer error
+  const d=detValue(A);
+  if(Math.abs(d)<1e-10) throw new Error(`A matriz é singular (det = 0) — não tem inversa. Verifica se as linhas são linearmente independentes.`);
   let L=cloneM(A), R=identity(n);
   for(let col=0;col<n;col++){
     let maxR=col,maxV=Math.abs(L[col][col]);
@@ -3050,7 +3020,7 @@ function matInverseFull(A){
     [L[col],L[maxR]]=[L[maxR],L[col]];
     [R[col],R[maxR]]=[R[maxR],R[col]];
     const piv=L[col][col];
-    if(Math.abs(piv)<1e-12) throw new Error(`Matriz singular — não tem inversa`);
+    if(Math.abs(piv)<1e-12) throw new Error(`A matriz é singular (det = 0) — não tem inversa. Verifica se as linhas são linearmente independentes.`);
     for(let c=0;c<n;c++){L[col][c]/=piv;R[col][c]/=piv;}
     for(let r=0;r<n;r++){
       if(r===col||Math.abs(L[r][col])<1e-12) continue;
@@ -3073,46 +3043,38 @@ function applyMods(mat,mods){
 // State for eq page
 let EQ_MATRICES={};   // name → 2d array
 let EQ_DIM={};        // name → {r,c}
+let EQ_NAMES=['A','B']; // ordered list of defined matrix names
+const EQ_ALL_NAMES=['A','B','C','D','E','F'];
 
-function eqInsert(s){
-  document.getElementById('eqInput').value=s;
-  eqPreview();
+function eqAddMatrix(){
+  const next=EQ_ALL_NAMES.find(n=>!EQ_NAMES.includes(n));
+  if(!next) return;
+  EQ_NAMES.push(next);
+  EQ_DIM[next]={r:2,c:2};
+  EQ_MATRICES[next]=[[0,0],[0,0]];
+  renderEqMatDefs();
 }
 
-function eqPreview(){
-  const raw=document.getElementById('eqInput').value;
-  if(!raw.trim()){
-    document.getElementById('eqParsed').style.display='none';
-    document.getElementById('eqMatInputs').innerHTML='';
-    return;
-  }
-  try{
-    const tokens=tokenize(raw);
-    const names=extractMatrixNames(tokens);
-    document.getElementById('eqParsedEq').innerHTML=tokensToHTML(tokens);
-    document.getElementById('eqParsed').style.display='block';
-    renderEqMatInputs(names);
-    document.getElementById('eqErr').classList.remove('show');
-  } catch(e){
-    document.getElementById('eqParsed').style.display='none';
-  }
+function eqRemoveMatrix(){
+  if(EQ_NAMES.length<=1) return;
+  const removed=EQ_NAMES.pop();
+  delete EQ_DIM[removed];
+  delete EQ_MATRICES[removed];
+  renderEqMatDefs();
 }
 
-function renderEqMatInputs(names){
-  // preserve existing matrix data
-  const area=document.getElementById('eqMatInputs');
-  const existing=EQ_DIM;
-  area.innerHTML='';
-  if(!names.length) return;
-
-  let h=`<div style="margin-bottom:16px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Matrizes conhecidas</div>`;
-  h+=`<div class="eq-matrix-inputs" id="eqMatBlocks">`;
-
-  for(const name of names){
+function renderEqMatDefs(){
+  const area=document.getElementById('eqMatDefs');
+  let h='';
+  for(const name of EQ_NAMES){
     const dim=EQ_DIM[name]||{r:2,c:2};
     EQ_DIM[name]=dim;
     h+=`<div class="eq-mat-block" id="emb_${name}">`;
-    h+=`<div class="emb-header"><span class="emb-name">${name}</span><span class="emb-dim" id="emb_dim_${name}">${dim.r}×${dim.c}</span><button class="btn-rnd" style="padding:4px 12px;font-size:10px;margin-left:auto" onclick="eqRandMatrix('${name}')">Aleatório</button></div>`;
+    h+=`<div class="emb-header">
+      <span class="emb-name">${name}</span>
+      <span class="emb-dim" id="emb_dim_${name}">${dim.r}×${dim.c}</span>
+      <button class="btn-rnd" style="padding:4px 12px;font-size:10px;margin-left:auto" onclick="eqRandMatrix('${name}')">Aleatório</button>
+    </div>`;
     h+=`<div class="emb-dim-row">`;
     h+=`<span style="font-size:9px;color:var(--muted)">Linhas:</span>`;
     h+=`<button class="dbtn" onclick="eqMatDim('${name}','r',-1)">−</button>`;
@@ -3123,12 +3085,34 @@ function renderEqMatInputs(names){
     h+=`<span style="font-size:13px;color:var(--acc);width:16px;text-align:center" id="embd_c_${name}">${dim.c}</span>`;
     h+=`<button class="dbtn" onclick="eqMatDim('${name}','c',1)">+</button>`;
     h+=`</div>`;
-    h+=`<div id="emb_grid_${name}">`;
-    h+=renderEqGrid(name,dim.r,dim.c);
-    h+=`</div></div>`;
+    h+=`<div id="emb_grid_${name}">${renderEqGrid(name,dim.r,dim.c)}</div>`;
+    h+=`</div>`;
   }
-  h+=`</div>`;
   area.innerHTML=h;
+  // update names label
+  const namesEl=document.getElementById('eqMatNames');
+  if(namesEl) namesEl.textContent=EQ_NAMES.join(', ');
+}
+
+function eqInsert(s){
+  document.getElementById('eqInput').value=s;
+  eqPreview();
+}
+
+function eqPreview(){
+  const raw=document.getElementById('eqInput').value;
+  if(!raw.trim()){
+    document.getElementById('eqParsed').style.display='none';
+    return;
+  }
+  try{
+    const tokens=tokenize(raw);
+    document.getElementById('eqParsedEq').innerHTML=tokensToHTML(tokens);
+    document.getElementById('eqParsed').style.display='block';
+    document.getElementById('eqErr').classList.remove('show');
+  } catch(e){
+    document.getElementById('eqParsed').style.display='none';
+  }
 }
 
 function renderEqGrid(name,rows,cols){
@@ -3142,10 +3126,8 @@ function renderEqGrid(name,rows,cols){
 }
 
 function eqMatDim(name,rc,d){
-  EQ_DIM[name]=EQ_DIM[name]||{r:2,c:2};
-  EQ_DIM[name][rc]=Math.max(1,Math.min(10,EQ_DIM[name][rc]+d));
-  // save current values
   eqSaveMatrix(name);
+  EQ_DIM[name][rc]=Math.max(1,Math.min(10,EQ_DIM[name][rc]+d));
   const dim=EQ_DIM[name];
   document.getElementById(`embd_r_${name}`).textContent=dim.r;
   document.getElementById(`embd_c_${name}`).textContent=dim.c;
@@ -3169,7 +3151,7 @@ function eqRandMatrix(name){
   const dim=EQ_DIM[name]||{r:2,c:2};
   for(let r=0;r<dim.r;r++) for(let c=0;c<dim.c;c++){
     const el=document.getElementById(`eq_${name}_${r}_${c}`);
-    if(el) el.value=Math.floor(Math.random()*19)-9; // -9 to 9
+    if(el) el.value=Math.floor(Math.random()*19)-9;
   }
   eqSaveMatrix(name);
 }
@@ -3182,11 +3164,14 @@ function eqGetMatrix(name){
 function clearEquation(){
   document.getElementById('eqInput').value='';
   document.getElementById('eqParsed').style.display='none';
-  document.getElementById('eqMatInputs').innerHTML='';
   document.getElementById('eqSteps').innerHTML='';
   document.getElementById('eqResult').innerHTML='';
   document.getElementById('eqErr').classList.remove('show');
   EQ_MATRICES={}; EQ_DIM={};
+  EQ_NAMES=['A','B'];
+  EQ_DIM['A']={r:2,c:2}; EQ_MATRICES['A']=[[0,0],[0,0]];
+  EQ_DIM['B']={r:2,c:2}; EQ_MATRICES['B']=[[0,0],[0,0]];
+  renderEqMatDefs();
 }
 
 // ── Render a matrix visually ────────────────────
@@ -3239,15 +3224,14 @@ function solveEquation(){
   let swapped=false;
   if(!hasX(lhs)&&hasX(rhs)){ [lhs,rhs]=[rhs,lhs]; swapped=true; }
 
-  // Save all matrices
-  const names=extractMatrixNames(tokens);
-  for(const n of names) eqSaveMatrix(n);
+  // Save all matrices from defined list
+  for(const n of EQ_NAMES) eqSaveMatrix(n);
 
-  // Build matrix values map
+  // Build matrix values map from all defined matrices
   const matVals={};
-  for(const n of names){
+  for(const n of EQ_NAMES){
     matVals[n]=EQ_MATRICES[n];
-    if(!matVals[n]||!matVals[n].length){ errEl.textContent=`Preenche os valores da matriz ${n}.`; errEl.classList.add('show'); return; }
+    if(!matVals[n]||!Array.isArray(matVals[n])||matVals[n].length===0){ errEl.textContent=`Preenche os valores da matriz ${n}.`; errEl.classList.add('show'); return; }
   }
 
   // Attempt to solve — we handle a linear form: LHS = [left_factors] * X * [right_factors] + [additive_terms]
@@ -3474,22 +3458,28 @@ function evalExpression(tokens,matVals){
 }
 
 function evalProduct(tokens,matVals){
-  // tokens is a product (no top-level + -)
-  // strip * operators and evaluate each term then multiply
   const factors=tokens.filter(t=>!(t.t==='OP'&&t.v==='*'));
   let result=null;
+  let pendingScalar=1;
   for(const tk of factors){
+    if(tk.t==='SCALAR'){ pendingScalar*=tk.v; continue; }
+    if(tk.t==='LPAREN'||tk.t==='RPAREN') continue;
     let val;
     if(tk.t==='TERM'){
       if(tk.name==='I'){
-        // identity — use current result dimensions or skip
-        continue;
+        const n=result?result.length:(Object.values(matVals)[0]||[[0,0],[0,0]]).length;
+        val=identity(n);
+      } else {
+        val=applyMods(matVals[tk.name],tk.mods);
       }
-      val=applyMods(matVals[tk.name],tk.mods);
-    } else if(tk.t==='LPAREN'||tk.t==='RPAREN') continue;
-    else continue;
+    } else continue;
+    if(pendingScalar!==1){ val=val.map(r=>r.map(v=>v*pendingScalar)); pendingScalar=1; }
     if(result===null) result=val;
     else result=matMulFull(result,val);
+  }
+  if(result===null&&pendingScalar!==1){
+    const n=(Object.values(matVals)[0]||[[0,0],[0,0]]).length;
+    result=identity(n).map(r=>r.map(v=>v*pendingScalar));
   }
   return result;
 }
@@ -4158,6 +4148,10 @@ renderTranspose();
 renderPower();
 renderProps();
 renderCar();
+// Init equações
+EQ_DIM['A']={r:2,c:2}; EQ_MATRICES['A']=[[0,0],[0,0]];
+EQ_DIM['B']={r:2,c:2}; EQ_MATRICES['B']=[[0,0],[0,0]];
+renderEqMatDefs();
 </script>
 </body>
 </html>

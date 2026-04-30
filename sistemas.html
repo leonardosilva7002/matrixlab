@@ -833,8 +833,41 @@ function getMatrix(prefix, rows, cols) {
 
 function copyMatrix(M) { return M.map(r => [...r]); }
 
-// Gauss-Jordan on augmented matrix [A|b], returns {rref, steps, rank, pivotCols}
-function gaussJordan(M_in) {
+// ── Rank calculator: iterates ALL columns (including b if present)
+// colLimit = how many columns count for pivots (-1 = all)
+function computeRankGeneral(M_in, colLimit) {
+  const M = M_in.map(r => [...r]);
+  const rows = M.length, cols = M[0].length;
+  const limit = colLimit === -1 ? cols : colLimit;
+  let pivotRow = 0, rank = 0;
+  for (let col = 0; col < limit && pivotRow < rows; col++) {
+    let maxRow = -1, maxVal = 0;
+    for (let r = pivotRow; r < rows; r++) {
+      if (Math.abs(M[r][col]) > maxVal) { maxVal = Math.abs(M[r][col]); maxRow = r; }
+    }
+    if (maxRow === -1 || maxVal < 1e-9) continue;
+    [M[pivotRow], M[maxRow]] = [M[maxRow], M[pivotRow]];
+    const pv = M[pivotRow][col];
+    for (let c = 0; c < cols; c++) M[pivotRow][c] /= pv;
+    for (let r = 0; r < rows; r++) {
+      if (r === pivotRow || Math.abs(M[r][col]) < 1e-9) continue;
+      const f = M[r][col];
+      for (let c = 0; c < cols; c++) M[r][c] -= f * M[pivotRow][c];
+      for (let c = 0; c < cols; c++) if (Math.abs(M[r][c]) < 1e-9) M[r][c] = 0;
+    }
+    rank++; pivotRow++;
+  }
+  return rank;
+}
+
+// rank of A only (ignore last column = b)
+function rankOfA(aug) { return computeRankGeneral(aug, aug[0].length - 1); }
+// rank of full augmented [A|b]
+function rankOfAug(aug) { return computeRankGeneral(aug, -1); }
+
+// ── Gauss upper-triangular (forward elimination only) — for step display ──
+// Returns {upper, steps, pivotCols} where upper is triangular superior
+function gaussElim(M_in) {
   const M = M_in.map(r => [...r]);
   const rows = M.length, cols = M[0].length;
   const steps = [];
@@ -842,33 +875,25 @@ function gaussJordan(M_in) {
   const pivotCols = [];
 
   for (let col = 0; col < cols - 1 && pivotRow < rows; col++) {
-    // Find pivot
+    // Find pivot (partial pivoting)
     let maxRow = -1, maxVal = 0;
     for (let r = pivotRow; r < rows; r++) {
       if (Math.abs(M[r][col]) > maxVal) { maxVal = Math.abs(M[r][col]); maxRow = r; }
     }
-    if (maxRow === -1 || maxVal < 1e-10) continue;
+    if (maxRow === -1 || maxVal < 1e-9) continue;
 
-    // Swap if needed
+    // Swap
     if (maxRow !== pivotRow) {
       [M[pivotRow], M[maxRow]] = [M[maxRow], M[pivotRow]];
       steps.push({ type: 'swap', r1: pivotRow, r2: maxRow, matrix: copyMatrix(M), col });
     }
 
-    // Scale pivot row
-    const pval = M[pivotRow][col];
-    if (Math.abs(pval - 1) > 1e-10) {
-      for (let c = 0; c < cols; c++) M[pivotRow][c] /= pval;
-      steps.push({ type: 'scale', row: pivotRow, factor: pval, matrix: copyMatrix(M), col });
-    }
-
-    // Eliminate all other rows
-    for (let r = 0; r < rows; r++) {
-      if (r === pivotRow || Math.abs(M[r][col]) < 1e-10) continue;
-      const factor = M[r][col];
+    // Eliminate ONLY rows BELOW pivot (triangular superior)
+    for (let r = pivotRow + 1; r < rows; r++) {
+      if (Math.abs(M[r][col]) < 1e-9) continue;
+      const factor = M[r][col] / M[pivotRow][col];
       for (let c = 0; c < cols; c++) M[r][c] -= factor * M[pivotRow][c];
-      // Clean near-zero
-      for (let c = 0; c < cols; c++) if (Math.abs(M[r][c]) < 1e-10) M[r][c] = 0;
+      for (let c = 0; c < cols; c++) if (Math.abs(M[r][c]) < 1e-9) M[r][c] = 0;
       steps.push({ type: 'elim', row: r, pivotRow, factor, matrix: copyMatrix(M), col });
     }
 
@@ -876,17 +901,10 @@ function gaussJordan(M_in) {
     pivotRow++;
   }
 
-  return { rref: M, steps, rank: pivotCols.length, pivotCols };
+  return { upper: M, steps, pivotCols };
 }
 
-// Compute rank of a matrix (without last column = b)
-function computeRank(M) {
-  const aug = M.map(r => [...r, 0]);
-  return gaussJordan(aug).rank;
-}
-function computeRankAug(M) {
-  return gaussJordan(M.map(r => [...r])).rank;
-}
+function copyMatrix(M) { return M.map(r => [...r]); }
 
 // ═══════════════════════════════════════════════
 // AUG MATRIX RENDER (for steps)
@@ -1028,12 +1046,14 @@ function calcSolve() {
   const err = document.getElementById('solveErr');
   err.classList.remove('show');
   const aug = getAugMatrix('s', S_ROWS, S_COLS);
-  const { rref, steps, rank, pivotCols } = gaussJordan(aug);
   const n = S_COLS;
 
-  // Check ranks
-  const rankA = rank;
-  const rankAug = computeRankAug(aug.map(r => [...r]));
+  // Correct ranks
+  const rankA   = rankOfA(aug);
+  const rankAug = rankOfAug(aug);
+
+  // Gauss elimination → triangular superior (for display)
+  const { upper, steps, pivotCols } = gaussElim(aug);
 
   let type, badgeClass, icon, sub;
   if (rankAug > rankA) {
@@ -1047,27 +1067,21 @@ function calcSolve() {
     sub = `car(A) = car([A|b]) = ${rankA} < n=${n} → ${n - rankA} grau(s) de liberdade`;
   }
 
-  // Result badge
   const labels = { SI: 'Sistema Impossível', SPD: 'Sistema Possível Determinado', SPI: 'Sistema Possível Indeterminado' };
   let resHTML = `<div class="sys-result-badge ${badgeClass}">
     <div class="srb-icon">${icon === '✓' ? '✅' : icon === '✗' ? '❌' : '♾️'}</div>
     <div><div class="srb-text">${labels[type]}</div><div class="srb-sub">${sub}</div></div>
   </div>`;
 
-  // Solution values
+  // Solution by back-substitution (SPD only)
   if (type === 'SPD') {
+    const sol = backSubstitution(upper, n);
     resHTML += `<div class="sol-grid">`;
     for (let i = 0; i < n; i++) {
-      // Find value in rref
-      let val = 0;
-      for (let r = 0; r < rref.length; r++) {
-        if (Math.abs(rref[r][i] - 1) < 1e-9) { val = rref[r][n]; break; }
-      }
-      resHTML += `<div class="sol-var"><span class="sv-name">x${subscript(i+1)}</span><span class="sv-val">${toFrac(val)}</span></div>`;
+      resHTML += `<div class="sol-var"><span class="sv-name">x${subscript(i+1)}</span><span class="sv-val">${toFrac(sol[i])}</span></div>`;
     }
     resHTML += `</div>`;
   } else if (type === 'SPI') {
-    // Find free variables
     const freeVars = [];
     for (let c = 0; c < n; c++) if (!pivotCols.includes(c)) freeVars.push(c);
     resHTML += `<div class="info-box">
@@ -1078,24 +1092,19 @@ function calcSolve() {
 
   document.getElementById('solveResult').innerHTML = resHTML;
 
-  // Steps
-  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Eliminação de Gauss-Jordan — Passo a Passo</h3><hr></div>`;
+  // ── Steps ──
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Eliminação de Gauss — Triangular Superior — Passo a Passo</h3><hr></div>`;
 
-  // Initial matrix
   stepsHTML += `<div class="mat-step-block">
     <div class="msb-label"><span class="msb-op init">INÍCIO</span> Matriz aumentada inicial [A | b]</div>
     ${renderAugDisplay(aug, [], [], n, -1)}
   </div>`;
 
-  // Each step
-  steps.forEach((s, idx) => {
+  steps.forEach(s => {
     let opBadge, desc;
     if (s.type === 'swap') {
       opBadge = `<span class="msb-op swap">TROCA</span>`;
       desc = `L${s.r1+1} ↔ L${s.r2+1}`;
-    } else if (s.type === 'scale') {
-      opBadge = `<span class="msb-op div">NORMALIZAR</span>`;
-      desc = `L${s.row+1} ← L${s.row+1} ÷ (${fmtPlain(s.factor)})  →  pivô = 1`;
     } else {
       opBadge = `<span class="msb-op elim">ELIMINAÇÃO</span>`;
       const f = s.factor;
@@ -1109,13 +1118,29 @@ function calcSolve() {
     </div>`;
   });
 
-  // RREF
   stepsHTML += `<div class="mat-step-block">
-    <div class="msb-label"><span class="msb-op back">FORMA RREF</span> Forma escalonada reduzida</div>
-    ${renderAugDisplay(rref, pivotCols, [], n, -1)}
+    <div class="msb-label"><span class="msb-op back">TRIANGULAR SUPERIOR</span> Forma escalonada</div>
+    ${renderAugDisplay(upper, pivotCols, [], n, -1)}
+    <div class="info-box" style="margin-top:10px">
+      Linhas não-nulas: <strong class="hi">${rankA}</strong> → car(A) = ${rankA} &nbsp;·&nbsp;
+      ${rankAug > rankA
+        ? `<span class="hr">Linha [0…0 | c≠0] → car([A|b]) = ${rankAug} → Sistema Impossível</span>`
+        : `car([A|b]) = ${rankAug}`}
+    </div>
   </div>`;
 
-  // Conclusion
+  if (type === 'SPD') {
+    const sol = backSubstitution(upper, n);
+    let backHTML = `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op back">SUBSTITUIÇÃO REGRESSIVA</span></div>
+      <div class="info-box">`;
+    for (let i = n - 1; i >= 0; i--) {
+      backHTML += `x${subscript(i+1)} = <strong class="hg">${fmtPlain(sol[i])}</strong><br>`;
+    }
+    backHTML += `</div></div>`;
+    stepsHTML += backHTML;
+  }
+
   stepsHTML += `<div class="mat-step-block">
     <div class="msb-label"><span class="msb-op done">CONCLUSÃO</span></div>
     <div class="info-box">
@@ -1128,6 +1153,18 @@ function calcSolve() {
 
   stepsHTML += `</div>`;
   document.getElementById('solveSteps').innerHTML = stepsHTML;
+}
+
+// Back-substitution from upper triangular augmented matrix
+function backSubstitution(U, n) {
+  const rows = U.length;
+  const sol = new Array(n).fill(0);
+  for (let i = Math.min(rows, n) - 1; i >= 0; i--) {
+    let sum = U[i][n]; // b value
+    for (let j = i + 1; j < n; j++) sum -= U[i][j] * sol[j];
+    sol[i] = Math.abs(U[i][i]) > 1e-9 ? sum / U[i][i] : 0;
+  }
+  return sol;
 }
 
 // ═══════════════════════════════════════════════
@@ -1246,10 +1283,15 @@ function calcClas() {
   const aug = getAugMatrix('cl', C_ROWS, C_COLS);
   const n = C_COLS;
 
-  // Rank of A (without last col)
-  const augA = aug.map(r => r.slice(0, n).concat([0]));
-  const { rank: rankA, rref: rrefA, pivotCols } = gaussJordan(augA);
-  const { rank: rankAug, rref } = gaussJordan(aug.map(r => [...r]));
+  const rankA   = rankOfA(aug);
+  const rankAug = rankOfAug(aug);
+
+  // Triangular superior da A (sem coluna b) para mostrar rank de A
+  const augAonly = aug.map(r => [...r.slice(0, n), 0]);
+  const { upper: upperA, pivotCols } = gaussElim(augAonly);
+
+  // Triangular superior da aumentada
+  const { upper: upperFull } = gaussElim(aug.map(r => [...r]));
 
   let type, badgeClass;
   if (rankAug > rankA) { type = 'SI'; badgeClass = 'impossible'; }
@@ -1257,14 +1299,13 @@ function calcClas() {
   else { type = 'SPI'; badgeClass = 'indeterminate'; }
 
   const labels = { SI: 'Sistema Impossível', SPD: 'Sistema Possível Determinado (SPD)', SPI: 'Sistema Possível Indeterminado (SPI)' };
-  const icons = { SI: '❌', SPD: '✅', SPI: '♾️' };
-  const subs = {
-    SI: `car(A) = ${rankA}, car([A|b]) = ${rankAug} → car([A|b]) > car(A) → Impossível`,
+  const icons  = { SI: '❌', SPD: '✅', SPI: '♾️' };
+  const subs   = {
+    SI:  `car(A) = ${rankA}, car([A|b]) = ${rankAug} → car([A|b]) > car(A) → Impossível`,
     SPD: `car(A) = car([A|b]) = n = ${n} → Solução única`,
     SPI: `car(A) = car([A|b]) = ${rankA} < n = ${n} → ${n - rankA} grau(s) de liberdade`
   };
 
-  // Prop grid
   let res = `<div class="prop-grid">
     <div class="prop-card"><div class="pc-label">car(A)</div><div class="pc-val acc">${rankA}</div><div class="pc-sub">Posto de A</div></div>
     <div class="prop-card"><div class="pc-label">car([A|b])</div><div class="pc-val ${rankAug > rankA ? 'bad' : 'acc'}">${rankAug}</div><div class="pc-sub">Posto da aumentada</div></div>
@@ -1288,15 +1329,20 @@ function calcClas() {
   </div>`;
 
   stepsHTML += `<div class="mat-step-block">
-    <div class="msb-label"><span class="msb-op elim">PASSO 2</span> RREF da matriz A</div>
-    ${renderAugDisplay(rrefA, pivotCols, [], n, -1)}
-    <div class="info-box" style="margin-top:10px">car(A) = <strong class="hi">${rankA}</strong> (nº de linhas não-nulas na RREF de A)</div>
+    <div class="msb-label"><span class="msb-op elim">PASSO 2</span> Triangular superior de A (sem coluna b)</div>
+    ${renderAugDisplay(upperA, pivotCols, [], n, -1)}
+    <div class="info-box" style="margin-top:10px">
+      Linhas não-nulas: <strong class="hi">${rankA}</strong> → car(A) = <strong class="hi">${rankA}</strong>
+    </div>
   </div>`;
 
   stepsHTML += `<div class="mat-step-block">
-    <div class="msb-label"><span class="msb-op back">PASSO 3</span> RREF da matriz aumentada [A|b]</div>
-    ${renderAugDisplay(rref, [], [], n, -1)}
-    <div class="info-box" style="margin-top:10px">car([A|b]) = <strong class="${rankAug > rankA ? 'hr' : 'hi'}">${rankAug}</strong></div>
+    <div class="msb-label"><span class="msb-op back">PASSO 3</span> Triangular superior da matriz aumentada [A|b]</div>
+    ${renderAugDisplay(upperFull, [], [], n, -1)}
+    <div class="info-box" style="margin-top:10px">
+      Linhas não-nulas: <strong class="${rankAug > rankA ? 'hr' : 'hi'}">${rankAug}</strong> → car([A|b]) = <strong class="${rankAug > rankA ? 'hr' : 'hi'}">${rankAug}</strong>
+      ${rankAug > rankA ? `<br><span class="hr">⚠ Existe linha [0 … 0 | c≠0] → contradição!</span>` : ''}
+    </div>
   </div>`;
 
   stepsHTML += `<div class="mat-step-block">

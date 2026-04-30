@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistemas de Equações Lineares</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --s1: #161b22;
+  --s2: #1c2128;
+  --s3: #252d3a;
+  --acc: #58a6ff;
+  --acc2: #bc8cff;
+  --gold: #e3b341;
+  --green: #3fb950;
+  --red: #f85149;
+  --blue: #388bfd;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --border: #30363d;
+  --border2: #3d444d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px;min-height:100vh;overflow-x:hidden;line-height:1.6;
+}
+.app{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;min-width:240px;background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo .tag{
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--acc);background:rgba(88,166,255,.1);
+  border:1px solid rgba(88,166,255,.2);
+  padding:2px 8px;border-radius:4px;margin-bottom:8px;display:inline-block;
+  font-family:'IBM Plex Mono',monospace;
+}
+.sidebar-logo h1{font-size:1.1rem;font-weight:600;color:var(--text);line-height:1.3}
+.sidebar-logo p{font-size:12px;color:var(--muted);margin-top:3px}
+.nav-section{
+  padding:16px 16px 4px;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;margin:1px 8px;border-radius:6px;cursor:pointer;
+  font-size:13px;color:var(--muted);transition:all .15s;
+  border:1px solid transparent;user-select:none;text-decoration:none;
+}
+.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.nav-item.active{background:rgba(88,166,255,.1);color:var(--acc);border-color:rgba(88,166,255,.2)}
+.nav-item.nav-ext:hover{border-color:rgba(255,209,102,.35)!important;color:var(--gold)!important}
+.nav-item .icon{
+  width:24px;height:24px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.nav-item .badge{
+  margin-left:auto;font-size:10px;padding:1px 6px;border-radius:4px;
+  background:var(--s3);color:var(--muted);font-family:'IBM Plex Mono',monospace;
+}
+.nav-item.active .badge{background:rgba(88,166,255,.15);color:var(--acc)}
+.sidebar-footer{
+  margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);
+}
+.frac-toggle{
+  display:flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  padding:8px 14px;margin-bottom:10px;cursor:pointer;width:100%;
+  justify-content:space-between;font-size:12px;color:var(--muted);transition:all .15s;
+  user-select:none;
+}
+.frac-toggle:hover{border-color:var(--border2);color:var(--text)}
+.frac-toggle .toggle-pill{
+  width:32px;height:18px;background:var(--s3);border-radius:9px;
+  position:relative;transition:background .2s;
+}
+.frac-toggle.on .toggle-pill{background:var(--acc)}
+.frac-toggle .toggle-dot{
+  width:12px;height:12px;background:#fff;border-radius:50%;
+  position:absolute;top:3px;left:3px;transition:left .2s;
+}
+.frac-toggle.on .toggle-dot{left:17px}
+
+/* ── MAIN ── */
+.main{flex:1;padding:36px 40px 80px;min-width:0;overflow-y:auto;max-height:100vh}
+.page{display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:28px}
+.page-header .back{
+  font-size:12px;color:var(--muted);cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;margin-bottom:10px;
+  transition:color .15s;text-decoration:none;
+}
+.page-header .back:hover{color:var(--acc)}
+.page-header h2{font-size:1.5rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:5px}
+.page-header p{font-size:13px;color:var(--muted);line-height:1.7;max-width:580px}
+
+/* ── DIM CONTROLS ── */
+.dim-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.dim-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px;display:flex;flex-direction:column;gap:6px;
+}
+.dim-card label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.dim-row{display:flex;align-items:center;gap:6px}
+.dim-row span{font-size:12px;color:var(--muted)}
+.dbtn{
+  background:var(--s3);border:1px solid var(--border2);color:var(--text);
+  width:26px;height:26px;border-radius:4px;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-family:'IBM Plex Mono',monospace;
+}
+.dbtn:hover{background:var(--acc);border-color:var(--acc);color:#0d1117}
+.dbtn:active{transform:scale(.9)}
+.dval{
+  background:transparent;border:none;color:var(--acc);
+  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;
+  width:28px;text-align:center;outline:none;
+}
+
+/* ── AUGMENTED MATRIX INPUT ── */
+.aug-input-area{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:20px 24px;margin-bottom:20px;overflow-x:auto;
+}
+.aug-input-area .aug-label{
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;
+}
+.aug-grid-wrap{display:flex;align-items:center;gap:8px;width:fit-content}
+.bracket-l,.bracket-r{
+  font-size:3rem;color:var(--muted);opacity:.4;
+  line-height:1;user-select:none;padding:0 2px;
+}
+.aug-grid{display:grid;gap:5px}
+.aug-sep-col{
+  width:2px;background:rgba(108,99,255,.4);align-self:stretch;
+  margin:0 6px;border-radius:2px;
+}
+.cell{
+  width:52px;height:38px;background:var(--s2);
+  border:1px solid var(--border);border-radius:4px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;
+  text-align:center;outline:none;transition:all .15s;padding:0 3px;
+}
+.cell:focus{background:rgba(88,166,255,.08);border-color:var(--acc);box-shadow:0 0 0 2px rgba(88,166,255,.15)}
+.cell:hover:not(:focus){border-color:rgba(88,166,255,.25)}
+.cell::-webkit-inner-spin-button,.cell::-webkit-outer-spin-button{-webkit-appearance:none}
+.cell.cell-b{background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.25)}
+.cell.cell-b:focus{background:rgba(108,99,255,.12);border-color:var(--acc2)}
+.col-headers{display:flex;gap:5px;padding-left:0;margin-bottom:2px}
+.col-hdr{
+  width:52px;text-align:center;font-size:10px;color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;
+}
+.col-hdr.b-hdr{color:var(--acc2)}
+
+/* ── ACTIONS ── */
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+.btn-primary{
+  background:var(--acc);border:none;color:#0d1117;
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;
+  padding:10px 24px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.btn-primary:hover{background:#79b8ff;box-shadow:0 4px 16px rgba(88,166,255,.25)}
+.btn-primary:active{transform:scale(.98)}
+.btn-secondary{
+  background:transparent;border:1px solid var(--border2);color:var(--muted);
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+  padding:10px 20px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.btn-secondary:hover{border-color:var(--red);color:var(--red)}
+.btn-rnd{
+  background:rgba(227,179,65,.07);border:1px solid rgba(227,179,65,.25);color:var(--gold);
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+  padding:10px 18px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.btn-rnd:hover{background:rgba(227,179,65,.12);border-color:rgba(227,179,65,.4)}
+
+/* ── ERROR ── */
+.err{
+  font-size:13px;color:var(--red);background:rgba(248,81,73,.07);
+  border:1px solid rgba(248,81,73,.2);border-radius:6px;
+  padding:10px 16px;margin-bottom:16px;display:none;
+}
+.err.show{display:block;animation:fadeIn .2s ease}
+
+/* ── RESULT BADGE ── */
+.sys-result-badge{
+  display:inline-flex;align-items:center;gap:12px;
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:10px;padding:14px 20px;margin-bottom:20px;
+}
+.sys-result-badge .srb-icon{font-size:1.5rem}
+.sys-result-badge .srb-text{font-size:.85rem;font-weight:600;color:var(--text)}
+.sys-result-badge .srb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sys-result-badge.possible{border-color:rgba(63,185,80,.3);background:rgba(63,185,80,.05)}
+.sys-result-badge.possible .srb-text{color:var(--green)}
+.sys-result-badge.indeterminate{border-color:rgba(227,179,65,.3);background:rgba(227,179,65,.05)}
+.sys-result-badge.indeterminate .srb-text{color:var(--gold)}
+.sys-result-badge.impossible{border-color:rgba(248,81,73,.3);background:rgba(248,81,73,.05)}
+.sys-result-badge.impossible .srb-text{color:var(--red)}
+
+/* ── SOLUTION DISPLAY ── */
+.sol-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.sol-var{
+  background:var(--s1);border:1px solid rgba(63,185,80,.3);border-radius:8px;
+  padding:12px 18px;display:flex;align-items:baseline;gap:10px;
+}
+.sol-var .sv-name{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-family:'IBM Plex Mono',monospace}
+.sol-var .sv-val{font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:var(--green)}
+
+/* ── STEPS ── */
+.steps{margin-top:28px}
+.steps-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.steps-header h3{font-size:1rem;font-weight:600;color:var(--text)}
+.steps-header hr{flex:1;border:none;border-top:1px solid var(--border)}
+.mat-step-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;margin-bottom:12px;
+}
+.mat-step-block .msb-label{
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.mat-step-block .msb-op{font-size:9px;padding:2px 10px;border-radius:3px;font-weight:600;letter-spacing:.1em}
+.msb-op.swap{background:rgba(255,209,102,.12);color:var(--gold)}
+.msb-op.elim{background:rgba(255,99,200,.12);color:var(--acc2)}
+.msb-op.scale{background:rgba(6,214,160,.12);color:var(--green)}
+.msb-op.init{background:rgba(108,99,255,.12);color:var(--acc)}
+.msb-op.back{background:rgba(56,139,253,.12);color:var(--blue)}
+.msb-op.done{background:rgba(255,99,200,.12);color:var(--acc2)}
+.msb-op.div{background:rgba(6,214,160,.12);color:var(--green)}
+.msb-op.info{background:rgba(255,209,102,.12);color:var(--gold)}
+
+/* ── AUGMENTED MATRIX DISPLAY (in steps) ── */
+.aug-display{display:flex;gap:4px;align-items:center;width:fit-content;margin-top:8px}
+.aug-display .bracket{font-size:2.2rem;color:var(--muted);opacity:.4;line-height:1;padding:0 2px}
+.aug-display table{border-collapse:separate;border-spacing:5px}
+.aug-display td{
+  min-width:48px;height:36px;background:var(--s2);border:1px solid var(--border);
+  border-radius:4px;text-align:center;vertical-align:middle;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);
+  padding:0 6px;
+}
+.aug-display td.pivot{background:rgba(88,166,255,.1);border-color:rgba(88,166,255,.3);color:var(--acc)}
+.aug-display td.changed{background:rgba(6,214,160,.1);border-color:rgba(6,214,160,.3);color:var(--green)}
+.aug-display td.zero{color:var(--muted)}
+.aug-display td.b-col{background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.2)}
+.aug-display td.b-col.changed{background:rgba(6,214,160,.1);border-color:rgba(6,214,160,.3);color:var(--green)}
+.aug-display .sep-col{width:3px;background:rgba(108,99,255,.4);border-radius:2px}
+.row-lbl{font-size:9px;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;padding-right:4px}
+
+.op-tag{
+  display:inline-block;font-size:10px;font-family:'IBM Plex Mono',monospace;
+  color:var(--gold);background:rgba(227,179,65,.1);border:1px solid rgba(227,179,65,.2);
+  border-radius:4px;padding:2px 8px;margin-right:6px;
+}
+.info-box{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:12px 16px;font-size:12px;color:var(--muted);line-height:2;margin-bottom:16px;
+}
+.info-box strong{color:var(--text)}
+.info-box .hi{color:var(--acc)}
+.info-box .hg{color:var(--green)}
+.info-box .hr{color:var(--red)}
+.info-box .hy{color:var(--gold)}
+
+/* ── TABS ── */
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.tab-btn{
+  background:var(--s2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;
+  padding:8px 18px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.tab-btn:hover{border-color:var(--acc);color:var(--acc)}
+.tab-btn.active{background:rgba(88,166,255,.1);border-color:var(--acc);color:var(--acc)}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fadeIn .2s ease}
+
+/* ── FRACTION DISPLAY ── */
+.frac-wrap{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.frac-inner{display:inline-flex;flex-direction:column;align-items:center;line-height:1;font-size:11px}
+.frac-num{border-bottom:1px solid currentColor;padding-bottom:1px;line-height:1.2}
+.frac-den{padding-top:1px;line-height:1.2}
+.frac-int{font-size:12px}
+
+/* ── VERIFICAÇÃO ── */
+.verify-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;margin-bottom:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;
+}
+.verify-row .vr-ok{color:var(--green)}
+.verify-row .vr-fail{color:var(--red)}
+.verify-row .vr-eq{color:var(--muted);flex:1}
+.verify-row .vr-val{color:var(--acc)}
+
+/* ── PROP CARDS ── */
+.prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.prop-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.prop-card .pc-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prop-card .pc-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--green)}
+.prop-card .pc-val.bad{color:var(--red)}
+.prop-card .pc-val.warn{color:var(--gold)}
+.prop-card .pc-val.acc{color:var(--acc)}
+.prop-card .pc-sub{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:70px 16px 60px;max-height:none;overflow-y:visible}
+  .mobile-topbar{display:flex}
+}
+.mobile-topbar{
+  display:none;position:fixed;top:0;left:0;right:0;height:54px;
+  background:var(--s1);border-bottom:1px solid var(--border);z-index:200;
+  align-items:center;justify-content:space-between;padding:0 16px;
+}
+.mobile-topbar-logo{
+  font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;
+  background:linear-gradient(135deg,var(--text) 40%,var(--acc));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hamburger-btn{
+  width:40px;height:40px;border-radius:8px;background:var(--s2);
+  border:1px solid var(--border);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:all .2s;
+}
+.hamburger-btn span{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-drawer{display:none;position:fixed;top:54px;left:0;right:0;bottom:0;z-index:190}
+.mobile-drawer.open{display:block}
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+.drawer-panel{
+  position:absolute;top:0;left:0;bottom:0;width:280px;
+  background:var(--s1);border-right:1px solid var(--border);
+  overflow-y:auto;padding-bottom:20px;animation:slideInDrawer .25s ease;
+}
+@keyframes slideInDrawer{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.drawer-section{padding:14px 12px 4px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;margin:2px 8px;
+  border-radius:8px;cursor:pointer;font-size:12px;color:var(--muted);
+  transition:all .2s;border:1px solid transparent;user-select:none;text-decoration:none;
+}
+.drawer-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.drawer-item.active{background:rgba(108,99,255,.12);color:var(--text);border-color:rgba(108,99,255,.3)}
+.drawer-item .icon{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:13px;flex-shrink:0;background:var(--s3);
+}
+.drawer-item .badge{margin-left:auto;font-size:9px;padding:2px 7px;border-radius:10px;background:var(--s3);color:var(--muted)}
+.drawer-footer{padding:14px 16px;border-top:1px solid var(--border);margin-top:10px;font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="tag">v1.0</div>
+    <h1>Sistemas<br>Lineares</h1>
+    <p>Módulo de Álgebra Linear</p>
+  </div>
+  <div class="nav-section">Início</div>
+  <a class="nav-item" href="index.html" style="text-decoration:none">
+    <div class="icon">🏠</div> Matrix Lab
+  </a>
+  <div class="nav-section">Sistemas</div>
+  <div class="nav-item active" onclick="showPage('resolver')">
+    <div class="icon">📐</div> Resolver <span class="badge">Ax=b</span>
+  </div>
+  <div class="nav-item" onclick="showPage('verificar')">
+    <div class="icon">✅</div> Verificar Solução <span class="badge">check</span>
+  </div>
+  <div class="nav-item" onclick="showPage('classificar')">
+    <div class="icon">🏷️</div> Classificar <span class="badge">tipo</span>
+  </div>
+  <div class="nav-section">Aprender</div>
+  <div class="nav-item" onclick="showPage('teoria')">
+    <div class="icon">📖</div> Teoria <span class="badge">guia</span>
+  </div>
+  <div class="sidebar-footer">
+    <div class="frac-toggle on" id="fracToggle" onclick="toggleFractions()">
+      <span>Mostrar frações</span>
+      <div class="toggle-pill"><div class="toggle-dot"></div></div>
+    </div>
+    Sistemas Lineares · JS puro
+  </div>
+</aside>
+
+<!-- MOBILE TOP BAR -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-logo">Sistemas Lineares</div>
+  <div class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+<!-- MOBILE DRAWER -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel">
+    <div class="drawer-section">Início</div>
+    <a class="drawer-item" href="index.html"><div class="icon">🏠</div> Matrix Lab</a>
+    <div class="drawer-section">Sistemas</div>
+    <div class="drawer-item active" onclick="showPage('resolver');closeDrawer()"><div class="icon">📐</div> Resolver <span class="badge">Ax=b</span></div>
+    <div class="drawer-item" onclick="showPage('verificar');closeDrawer()"><div class="icon">✅</div> Verificar Solução <span class="badge">check</span></div>
+    <div class="drawer-item" onclick="showPage('classificar');closeDrawer()"><div class="icon">🏷️</div> Classificar <span class="badge">tipo</span></div>
+    <div class="drawer-section">Aprender</div>
+    <div class="drawer-item" onclick="showPage('teoria');closeDrawer()"><div class="icon">📖</div> Teoria <span class="badge">guia</span></div>
+    <div class="drawer-footer">Sistemas Lineares · JS puro</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ══════════════ RESOLVER ══════════════ -->
+<section class="page active" id="page-resolver">
+  <div class="page-header">
+    <a class="back" href="index.html">← Matrix Lab</a>
+    <h2>Resolver Sistema Linear</h2>
+    <p>Introduz a matriz aumentada [A|b] do sistema Ax = b. O método de Gauss-Jordan devolve a solução com cada passo detalhado.</p>
+  </div>
+
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Equações (linhas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="solveDim('r',-1)">−</button>
+        <input class="dval" id="solveRows" value="3" readonly>
+        <button class="dbtn" onclick="solveDim('r',1)">+</button>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Incógnitas (colunas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="solveDim('c',-1)">−</button>
+        <input class="dval" id="solveCols" value="3" readonly>
+        <button class="dbtn" onclick="solveDim('c',1)">+</button>
+      </div>
+    </div>
+    <div class="dim-card" style="justify-content:center">
+      <label>Tamanho do sistema</label>
+      <div style="font-size:12px;color:var(--acc);font-weight:600;padding-top:4px" id="solveSizeLabel">3 × 3 (quadrado)</div>
+    </div>
+  </div>
+
+  <div id="solveErr" class="err"></div>
+
+  <div class="aug-input-area">
+    <div class="aug-label">Matriz aumentada [A | b]</div>
+    <div id="solveColHeaders" class="col-headers" style="padding-left:30px"></div>
+    <div class="aug-grid-wrap">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-right:6px" id="solveRowLabels"></div>
+      <span class="bracket-l">[</span>
+      <div id="solveGridA" class="aug-grid"></div>
+      <div class="aug-sep-col"></div>
+      <div id="solveGridB" class="aug-grid"></div>
+      <span class="bracket-r">]</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="calcSolve()">Resolver</button>
+    <button class="btn-rnd" onclick="randSolve()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearSolve()">Limpar</button>
+  </div>
+
+  <div id="solveResult"></div>
+  <div id="solveSteps"></div>
+</section>
+
+<!-- ══════════════ VERIFICAR ══════════════ -->
+<section class="page" id="page-verificar">
+  <div class="page-header">
+    <a class="back" href="index.html">← Matrix Lab</a>
+    <h2>Verificar Solução</h2>
+    <p>Introduz o sistema e um vetor solução candidato para verificar se satisfaz todas as equações.</p>
+  </div>
+
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Equações (linhas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="verDim('r',-1)">−</button>
+        <input class="dval" id="verRows" value="3" readonly>
+        <button class="dbtn" onclick="verDim('r',1)">+</button>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Incógnitas (colunas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="verDim('c',-1)">−</button>
+        <input class="dval" id="verCols" value="3" readonly>
+        <button class="dbtn" onclick="verDim('c',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="verErr" class="err"></div>
+
+  <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
+    <div class="aug-input-area" style="flex:1;min-width:280px">
+      <div class="aug-label">Matriz aumentada [A | b]</div>
+      <div id="verColHeaders" class="col-headers" style="padding-left:30px"></div>
+      <div class="aug-grid-wrap">
+        <div style="display:flex;flex-direction:column;gap:5px;margin-right:6px" id="verRowLabels"></div>
+        <span class="bracket-l">[</span>
+        <div id="verGridA" class="aug-grid"></div>
+        <div class="aug-sep-col"></div>
+        <div id="verGridB" class="aug-grid"></div>
+        <span class="bracket-r">]</span>
+      </div>
+    </div>
+    <div class="aug-input-area" style="min-width:160px">
+      <div class="aug-label">Vetor solução candidato x</div>
+      <div id="verVecWrap" style="display:flex;flex-direction:column;gap:5px;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="calcVerify()">Verificar</button>
+    <button class="btn-secondary" onclick="clearVerify()">Limpar</button>
+  </div>
+  <div id="verResult"></div>
+</section>
+
+<!-- ══════════════ CLASSIFICAR ══════════════ -->
+<section class="page" id="page-classificar">
+  <div class="page-header">
+    <a class="back" href="index.html">← Matrix Lab</a>
+    <h2>Classificar Sistema</h2>
+    <p>Determina se o sistema é <strong>Possível Determinado</strong>, <strong>Possível Indeterminado</strong> ou <strong>Impossível</strong>, usando a comparação dos postos de A e [A|b].</p>
+  </div>
+
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Equações (linhas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="clasDim('r',-1)">−</button>
+        <input class="dval" id="clasRows" value="3" readonly>
+        <button class="dbtn" onclick="clasDim('r',1)">+</button>
+      </div>
+    </div>
+    <div class="dim-card">
+      <label>Incógnitas (colunas)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="clasDim('c',-1)">−</button>
+        <input class="dval" id="clasCols" value="3" readonly>
+        <button class="dbtn" onclick="clasDim('c',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clasErr" class="err"></div>
+
+  <div class="aug-input-area">
+    <div class="aug-label">Matriz aumentada [A | b]</div>
+    <div id="clasColHeaders" class="col-headers" style="padding-left:30px"></div>
+    <div class="aug-grid-wrap">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-right:6px" id="clasRowLabels"></div>
+      <span class="bracket-l">[</span>
+      <div id="clasGridA" class="aug-grid"></div>
+      <div class="aug-sep-col"></div>
+      <div id="clasGridB" class="aug-grid"></div>
+      <span class="bracket-r">]</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="calcClas()">Classificar</button>
+    <button class="btn-rnd" onclick="randClas()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearClas()">Limpar</button>
+  </div>
+  <div id="clasResult"></div>
+  <div id="clasSteps"></div>
+</section>
+
+<!-- ══════════════ TEORIA ══════════════ -->
+<section class="page" id="page-teoria">
+  <div class="page-header">
+    <a class="back" href="index.html">← Matrix Lab</a>
+    <h2>Teoria — Sistemas Lineares</h2>
+    <p>Resumo dos conceitos fundamentais para resolver e classificar sistemas de equações lineares.</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('t-conceitos')">Conceitos</button>
+    <button class="tab-btn" onclick="showTab('t-gauss')">Gauss-Jordan</button>
+    <button class="tab-btn" onclick="showTab('t-class')">Classificação</button>
+    <button class="tab-btn" onclick="showTab('t-cramer')">Regra de Cramer</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-t-conceitos">
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">DEF</span> Sistema de equações lineares</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        Um sistema de <strong style="color:var(--text)">m equações</strong> e <strong style="color:var(--text)">n incógnitas</strong> tem a forma Ax = b, onde A é a matriz dos coeficientes (m×n), x = (x₁,…,xₙ)ᵀ é o vetor das incógnitas, e b = (b₁,…,bₘ)ᵀ é o vetor dos termos independentes.<br>
+        A <strong style="color:var(--acc)">matriz aumentada</strong> [A|b] junta A e b numa única matriz (m×(n+1)).
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">DEF</span> Sistemas homogéneos vs. não-homogéneos</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        Se b = 0, o sistema é <strong style="color:var(--text)">homogéneo</strong> — tem sempre a solução trivial x = 0.<br>
+        Se b ≠ 0, é <strong style="color:var(--text)">não-homogéneo</strong> — pode ser impossível, determinado ou indeterminado.
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op scale">THM</span> Teorema de Rouché-Capelli</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        Seja r = car(A) e r' = car([A|b]):<br>
+        • Se <strong style="color:var(--red)">r' > r</strong> → Sistema <strong style="color:var(--red)">Impossível (SI)</strong> — sem solução.<br>
+        • Se <strong style="color:var(--green)">r' = r = n</strong> → Sistema <strong style="color:var(--green)">Possível Determinado (SPD)</strong> — solução única.<br>
+        • Se <strong style="color:var(--gold)">r' = r &lt; n</strong> → Sistema <strong style="color:var(--gold)">Possível Indeterminado (SPI)</strong> — infinitas soluções (n − r graus de liberdade).
+      </p>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-t-gauss">
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">MÉTODO</span> Eliminação de Gauss-Jordan</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2.2">
+        Opera sobre a matriz aumentada [A|b] usando três operações elementares por linhas:<br>
+        <span class="op-tag">L_i ↔ L_j</span> Trocar duas linhas<br>
+        <span class="op-tag">L_i ← k·L_i</span> Multiplicar uma linha por k ≠ 0<br>
+        <span class="op-tag">L_i ← L_i + k·L_j</span> Somar a uma linha um múltiplo de outra<br><br>
+        O objetivo é obter a <strong style="color:var(--acc)">forma escalonada reduzida por linhas</strong> (RREF): cada linha com pivô tem 1 nessa posição e 0 em todas as outras entradas da mesma coluna.
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op elim">PASSO A PASSO</span></div>
+      <ol style="font-size:12px;color:var(--muted);line-height:2.5;padding-left:18px">
+        <li>Escolher o pivô — primeiro elemento não-nulo da coluna mais à esquerda.</li>
+        <li>Se necessário, trocar linhas para colocar o pivô na linha atual.</li>
+        <li>Normalizar a linha do pivô: dividir toda a linha pelo valor do pivô → pivô fica 1.</li>
+        <li>Eliminar a coluna do pivô: subtrair múltiplos da linha do pivô a todas as outras linhas.</li>
+        <li>Avançar para a próxima coluna/linha e repetir.</li>
+        <li>Ler a solução: se SPD, x_i = valor na coluna b da linha i.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-t-class">
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op done">SPD</span> Sistema Possível Determinado</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        car(A) = car([A|b]) = n (nº de incógnitas).<br>
+        A forma escalonada não tem linhas do tipo [0 0 … 0 | c≠0] e tem exatamente n pivôs.<br>
+        <strong style="color:var(--green)">Solução única: x = A⁻¹b</strong>
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op info">SPI</span> Sistema Possível Indeterminado</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        car(A) = car([A|b]) = r &lt; n.<br>
+        Existem n − r <strong style="color:var(--gold)">variáveis livres</strong> (parâmetros). A solução geral é uma família de soluções parametrizada por esses parâmetros.
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op swap">SI</span> Sistema Impossível</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        car([A|b]) &gt; car(A).<br>
+        Na forma escalonada existe pelo menos uma linha do tipo [0 0 … 0 | c≠0], que representa a equação <strong style="color:var(--red)">0 = c (contradição)</strong>.<br>
+        Não existe qualquer solução.
+      </p>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-t-cramer">
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op init">REGRA</span> Regra de Cramer (apenas SPD, n = m)</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2">
+        Para um sistema quadrado n×n com det(A) ≠ 0 (SPD):<br><br>
+        <strong style="color:var(--acc)">x_i = det(A_i) / det(A)</strong><br><br>
+        onde A_i é a matriz obtida substituindo a i-ésima coluna de A pelo vetor b.<br><br>
+        Útil para sistemas pequenos (2×2 e 3×3). Para sistemas maiores, Gauss-Jordan é mais eficiente.
+      </p>
+    </div>
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op scale">EXEMPLO</span> Sistema 2×2</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2.2;font-family:'IBM Plex Mono',monospace">
+        a₁x + b₁y = c₁<br>
+        a₂x + b₂y = c₂<br><br>
+        <span style="color:var(--text)">D = a₁b₂ − a₂b₁</span><br>
+        <span style="color:var(--acc)">x = (c₁b₂ − c₂b₁) / D</span><br>
+        <span style="color:var(--acc2)">y = (a₁c₂ − a₂c₁) / D</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════
+let SHOW_FRACS = true;
+
+// Solve
+let S_ROWS = 3, S_COLS = 3;
+// Verify
+let V_ROWS = 3, V_COLS = 3;
+// Classify
+let C_ROWS = 3, C_COLS = 3;
+
+// ═══════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id === 'resolver' ? 'resolver' :
+        id === 'verificar' ? 'verificar' :
+        id === 'classificar' ? 'classif' :
+        id === 'teoria' ? 'teoria' : '___'))
+      n.classList.add('active');
+  });
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleDrawer() {
+  document.getElementById('mobileDrawer').classList.toggle('open');
+  document.getElementById('hamburgerBtn').classList.toggle('open');
+}
+function closeDrawer() {
+  document.getElementById('mobileDrawer').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+
+function toggleFractions() {
+  SHOW_FRACS = !SHOW_FRACS;
+  document.getElementById('fracToggle').classList.toggle('on', SHOW_FRACS);
+}
+
+// ═══════════════════════════════════════════════
+// FRACTION MATH
+// ═══════════════════════════════════════════════
+function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+
+function toFrac(v) {
+  if (!SHOW_FRACS) return fmtDec(v);
+  if (!isFinite(v)) return '∞';
+  const eps = 1e-9;
+  if (Math.abs(v) < eps) return '0';
+  const sign = v < 0 ? '−' : '';
+  v = Math.abs(v);
+  // Try denominators up to 1000
+  for (let d = 1; d <= 1000; d++) {
+    const n = Math.round(v * d);
+    if (Math.abs(n / d - v) < eps) {
+      const g = gcd(n, d);
+      const nn = n / g, dd = d / g;
+      if (dd === 1) return sign + nn;
+      const whole = Math.floor(nn / dd);
+      const rem = nn % dd;
+      if (whole > 0 && rem > 0) {
+        return `<span class="frac-wrap">${sign}${whole}<span class="frac-inner"><span class="frac-num">${rem}</span><span class="frac-den">${dd}</span></span></span>`;
+      }
+      return `<span class="frac-wrap">${sign}<span class="frac-inner"><span class="frac-num">${nn}</span><span class="frac-den">${dd}</span></span></span>`;
+    }
+  }
+  return sign + fmtDec(v);
+}
+
+function fmtDec(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  const r = Math.round(v * 1e9) / 1e9;
+  return parseFloat(r.toFixed(6)).toString();
+}
+
+function fmtPlain(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  const r = Math.round(v * 1e10) / 1e10;
+  if (Number.isInteger(r)) return r.toString();
+  // Try fraction
+  for (let d = 1; d <= 1000; d++) {
+    const n = Math.round(Math.abs(r) * d);
+    if (Math.abs(n / d - Math.abs(r)) < 1e-9) {
+      const g = gcd(n, d);
+      const nn = n / g, dd = d / g;
+      if (dd === 1) return (r < 0 ? '-' : '') + nn;
+      return (r < 0 ? '-' : '') + nn + '/' + dd;
+    }
+  }
+  return parseFloat(r.toFixed(4)).toString();
+}
+
+// ═══════════════════════════════════════════════
+// MATRIX HELPERS
+// ═══════════════════════════════════════════════
+function getMatrix(prefix, rows, cols) {
+  const M = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const el = document.getElementById(`${prefix}_${r}_${c}`);
+      row.push(el ? (parseFloat(el.value) || 0) : 0);
+    }
+    M.push(row);
+  }
+  return M;
+}
+
+function copyMatrix(M) { return M.map(r => [...r]); }
+
+// Gauss-Jordan on augmented matrix [A|b], returns {rref, steps, rank, pivotCols}
+function gaussJordan(M_in) {
+  const M = M_in.map(r => [...r]);
+  const rows = M.length, cols = M[0].length;
+  const steps = [];
+  let pivotRow = 0;
+  const pivotCols = [];
+
+  for (let col = 0; col < cols - 1 && pivotRow < rows; col++) {
+    // Find pivot
+    let maxRow = -1, maxVal = 0;
+    for (let r = pivotRow; r < rows; r++) {
+      if (Math.abs(M[r][col]) > maxVal) { maxVal = Math.abs(M[r][col]); maxRow = r; }
+    }
+    if (maxRow === -1 || maxVal < 1e-10) continue;
+
+    // Swap if needed
+    if (maxRow !== pivotRow) {
+      [M[pivotRow], M[maxRow]] = [M[maxRow], M[pivotRow]];
+      steps.push({ type: 'swap', r1: pivotRow, r2: maxRow, matrix: copyMatrix(M), col });
+    }
+
+    // Scale pivot row
+    const pval = M[pivotRow][col];
+    if (Math.abs(pval - 1) > 1e-10) {
+      for (let c = 0; c < cols; c++) M[pivotRow][c] /= pval;
+      steps.push({ type: 'scale', row: pivotRow, factor: pval, matrix: copyMatrix(M), col });
+    }
+
+    // Eliminate all other rows
+    for (let r = 0; r < rows; r++) {
+      if (r === pivotRow || Math.abs(M[r][col]) < 1e-10) continue;
+      const factor = M[r][col];
+      for (let c = 0; c < cols; c++) M[r][c] -= factor * M[pivotRow][c];
+      // Clean near-zero
+      for (let c = 0; c < cols; c++) if (Math.abs(M[r][c]) < 1e-10) M[r][c] = 0;
+      steps.push({ type: 'elim', row: r, pivotRow, factor, matrix: copyMatrix(M), col });
+    }
+
+    pivotCols.push(col);
+    pivotRow++;
+  }
+
+  return { rref: M, steps, rank: pivotCols.length, pivotCols };
+}
+
+// Compute rank of a matrix (without last column = b)
+function computeRank(M) {
+  const aug = M.map(r => [...r, 0]);
+  return gaussJordan(aug).rank;
+}
+function computeRankAug(M) {
+  return gaussJordan(M.map(r => [...r])).rank;
+}
+
+// ═══════════════════════════════════════════════
+// AUG MATRIX RENDER (for steps)
+// ═══════════════════════════════════════════════
+function renderAugDisplay(M, pivotCols, changedRows, cols, highlightCol) {
+  const rows = M.length;
+  const nCols = cols; // number of A cols
+  let html = `<div class="aug-display"><span class="bracket">[</span><table>`;
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><td class="row-lbl" style="background:transparent;border:none;color:var(--muted);font-size:9px;width:20px">L${r+1}</td>`;
+    for (let c = 0; c < M[r].length; c++) {
+      if (c === nCols) html += `<td class="sep-col" style="width:3px;padding:0;border:none;background:rgba(108,99,255,.4)"></td>`;
+      const isPivot = pivotCols && pivotCols.includes(c) && M[r][c] !== 0 && Math.abs(M[r][c] - 1) < 1e-9;
+      const isChanged = changedRows && changedRows.includes(r);
+      const isB = c >= nCols;
+      const isZero = Math.abs(M[r][c]) < 1e-9;
+      let cls = isB ? 'b-col' : '';
+      if (isPivot) cls += ' pivot';
+      else if (isChanged) cls += ' changed';
+      else if (isZero) cls += ' zero';
+      html += `<td class="${cls}">${toFrac(M[r][c])}</td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</table><span class="bracket">]</span></div>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER GRID INPUTS
+// ═══════════════════════════════════════════════
+function renderAugGrid(prefix, rows, cols, gridAId, gridBId, rowLabelsId, colHeadersId) {
+  const ga = document.getElementById(gridAId);
+  const gb = document.getElementById(gridBId);
+  const rl = document.getElementById(rowLabelsId);
+  const ch = document.getElementById(colHeadersId);
+
+  ga.style.gridTemplateColumns = `repeat(${cols}, 52px)`;
+  gb.style.gridTemplateColumns = `52px`;
+
+  // Col headers
+  let hdrs = '<div style="width:26px"></div>';
+  for (let c = 0; c < cols; c++) hdrs += `<div class="col-hdr">x${subscript(c+1)}</div>`;
+  hdrs += '<div style="width:18px"></div><div class="col-hdr b-hdr">b</div>';
+  ch.innerHTML = hdrs;
+
+  // Row labels
+  rl.innerHTML = '';
+  for (let r = 0; r < rows; r++) {
+    const d = document.createElement('div');
+    d.style.cssText = 'font-size:10px;color:var(--muted);height:38px;display:flex;align-items:center;font-family:IBM Plex Mono,monospace';
+    d.textContent = `L${r+1}`;
+    rl.appendChild(d);
+  }
+
+  ga.innerHTML = '';
+  gb.innerHTML = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.className = 'cell'; inp.step = 'any';
+      inp.id = `${prefix}_${r}_${c}`; inp.value = '';
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const next = document.getElementById(`${prefix}_${r}_${c+1}`) ||
+                       document.getElementById(`${prefix}_${r+1}_0`) ||
+                       document.getElementById(`${prefix}_b_${r}_0`);
+          if (next) next.focus();
+        }
+      });
+      ga.appendChild(inp);
+    }
+  }
+  for (let r = 0; r < rows; r++) {
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.className = 'cell cell-b'; inp.step = 'any';
+    inp.id = `${prefix}_b_${r}_0`; inp.value = '';
+    gb.appendChild(inp);
+  }
+}
+
+function subscript(n) {
+  const subs = '₀₁₂₃₄₅₆₇₈₉';
+  return String(n).split('').map(d => subs[+d] || d).join('');
+}
+
+function getAugMatrix(prefix, rows, cols) {
+  const M = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const el = document.getElementById(`${prefix}_${r}_${c}`);
+      row.push(el ? (parseFloat(el.value) || 0) : 0);
+    }
+    const b = document.getElementById(`${prefix}_b_${r}_0`);
+    row.push(b ? (parseFloat(b.value) || 0) : 0);
+    M.push(row);
+  }
+  return M;
+}
+
+// ═══════════════════════════════════════════════
+// SOLVE PAGE
+// ═══════════════════════════════════════════════
+function solveDim(axis, d) {
+  if (axis === 'r') S_ROWS = Math.max(1, Math.min(8, S_ROWS + d));
+  else S_COLS = Math.max(1, Math.min(8, S_COLS + d));
+  document.getElementById('solveRows').value = S_ROWS;
+  document.getElementById('solveCols').value = S_COLS;
+  const sq = S_ROWS === S_COLS ? '(quadrado)' : S_ROWS < S_COLS ? '(subdeterminado)' : '(sobredeterminado)';
+  document.getElementById('solveSizeLabel').textContent = `${S_ROWS} × ${S_COLS} ${sq}`;
+  renderAugGrid('s', S_ROWS, S_COLS, 'solveGridA', 'solveGridB', 'solveRowLabels', 'solveColHeaders');
+  document.getElementById('solveResult').innerHTML = '';
+  document.getElementById('solveSteps').innerHTML = '';
+}
+
+function randSolve() {
+  for (let r = 0; r < S_ROWS; r++) {
+    for (let c = 0; c < S_COLS; c++) {
+      const el = document.getElementById(`s_${r}_${c}`);
+      if (el) el.value = Math.floor(Math.random() * 9) - 4;
+    }
+    const b = document.getElementById(`s_b_${r}_0`);
+    if (b) b.value = Math.floor(Math.random() * 9) - 4;
+  }
+}
+
+function clearSolve() {
+  for (let r = 0; r < S_ROWS; r++) {
+    for (let c = 0; c < S_COLS; c++) { const el = document.getElementById(`s_${r}_${c}`); if (el) el.value = ''; }
+    const b = document.getElementById(`s_b_${r}_0`); if (b) b.value = '';
+  }
+  document.getElementById('solveResult').innerHTML = '';
+  document.getElementById('solveSteps').innerHTML = '';
+}
+
+function calcSolve() {
+  const err = document.getElementById('solveErr');
+  err.classList.remove('show');
+  const aug = getAugMatrix('s', S_ROWS, S_COLS);
+  const { rref, steps, rank, pivotCols } = gaussJordan(aug);
+  const n = S_COLS;
+
+  // Check ranks
+  const rankA = rank;
+  const rankAug = computeRankAug(aug.map(r => [...r]));
+
+  let type, badgeClass, icon, sub;
+  if (rankAug > rankA) {
+    type = 'SI'; badgeClass = 'impossible'; icon = '✗';
+    sub = `car(A) = ${rankA}, car([A|b]) = ${rankAug} → Impossível`;
+  } else if (rankA === n) {
+    type = 'SPD'; badgeClass = 'possible'; icon = '✓';
+    sub = `car(A) = car([A|b]) = ${rankA} = n → Solução única`;
+  } else {
+    type = 'SPI'; badgeClass = 'indeterminate'; icon = '∞';
+    sub = `car(A) = car([A|b]) = ${rankA} < n=${n} → ${n - rankA} grau(s) de liberdade`;
+  }
+
+  // Result badge
+  const labels = { SI: 'Sistema Impossível', SPD: 'Sistema Possível Determinado', SPI: 'Sistema Possível Indeterminado' };
+  let resHTML = `<div class="sys-result-badge ${badgeClass}">
+    <div class="srb-icon">${icon === '✓' ? '✅' : icon === '✗' ? '❌' : '♾️'}</div>
+    <div><div class="srb-text">${labels[type]}</div><div class="srb-sub">${sub}</div></div>
+  </div>`;
+
+  // Solution values
+  if (type === 'SPD') {
+    resHTML += `<div class="sol-grid">`;
+    for (let i = 0; i < n; i++) {
+      // Find value in rref
+      let val = 0;
+      for (let r = 0; r < rref.length; r++) {
+        if (Math.abs(rref[r][i] - 1) < 1e-9) { val = rref[r][n]; break; }
+      }
+      resHTML += `<div class="sol-var"><span class="sv-name">x${subscript(i+1)}</span><span class="sv-val">${toFrac(val)}</span></div>`;
+    }
+    resHTML += `</div>`;
+  } else if (type === 'SPI') {
+    // Find free variables
+    const freeVars = [];
+    for (let c = 0; c < n; c++) if (!pivotCols.includes(c)) freeVars.push(c);
+    resHTML += `<div class="info-box">
+      <strong>Variáveis livres:</strong> ${freeVars.map(v => `<span class="hi">x${subscript(v+1)}</span>`).join(', ')} (parâmetros livres)<br>
+      O sistema tem infinitas soluções parametrizadas por ${n - rankA} parâmetro(s).
+    </div>`;
+  }
+
+  document.getElementById('solveResult').innerHTML = resHTML;
+
+  // Steps
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Eliminação de Gauss-Jordan — Passo a Passo</h3><hr></div>`;
+
+  // Initial matrix
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op init">INÍCIO</span> Matriz aumentada inicial [A | b]</div>
+    ${renderAugDisplay(aug, [], [], n, -1)}
+  </div>`;
+
+  // Each step
+  steps.forEach((s, idx) => {
+    let opBadge, desc;
+    if (s.type === 'swap') {
+      opBadge = `<span class="msb-op swap">TROCA</span>`;
+      desc = `L${s.r1+1} ↔ L${s.r2+1}`;
+    } else if (s.type === 'scale') {
+      opBadge = `<span class="msb-op div">NORMALIZAR</span>`;
+      desc = `L${s.row+1} ← L${s.row+1} ÷ (${fmtPlain(s.factor)})  →  pivô = 1`;
+    } else {
+      opBadge = `<span class="msb-op elim">ELIMINAÇÃO</span>`;
+      const f = s.factor;
+      const sign = f < 0 ? '+' : '−';
+      desc = `L${s.row+1} ← L${s.row+1} ${sign} ${fmtPlain(Math.abs(f))}·L${s.pivotRow+1}`;
+    }
+    const changed = s.type === 'swap' ? [s.r1, s.r2] : [s.row];
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label">${opBadge} <span style="color:var(--text)">${desc}</span></div>
+      ${renderAugDisplay(s.matrix, pivotCols, changed, n, s.col)}
+    </div>`;
+  });
+
+  // RREF
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op back">FORMA RREF</span> Forma escalonada reduzida</div>
+    ${renderAugDisplay(rref, pivotCols, [], n, -1)}
+  </div>`;
+
+  // Conclusion
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op done">CONCLUSÃO</span></div>
+    <div class="info-box">
+      <strong>car(A) = ${rankA}</strong> &nbsp;·&nbsp; <strong>car([A|b]) = ${rankAug}</strong> &nbsp;·&nbsp; <strong>n = ${n}</strong><br>
+      ${type === 'SI' ? `<span class="hr">car([A|b]) > car(A) → Sistema Impossível. Linha contradição: [0 … 0 | c ≠ 0].</span>`
+        : type === 'SPD' ? `<span class="hg">car(A) = n → Sistema Possível Determinado. Solução única acima.</span>`
+        : `<span class="hy">car(A) = ${rankA} < n = ${n} → Sistema Possível Indeterminado. ${n-rankA} parâmetro(s) livre(s).</span>`}
+    </div>
+  </div>`;
+
+  stepsHTML += `</div>`;
+  document.getElementById('solveSteps').innerHTML = stepsHTML;
+}
+
+// ═══════════════════════════════════════════════
+// VERIFY PAGE
+// ═══════════════════════════════════════════════
+function verDim(axis, d) {
+  if (axis === 'r') V_ROWS = Math.max(1, Math.min(8, V_ROWS + d));
+  else V_COLS = Math.max(1, Math.min(8, V_COLS + d));
+  document.getElementById('verRows').value = V_ROWS;
+  document.getElementById('verCols').value = V_COLS;
+  renderAugGrid('v', V_ROWS, V_COLS, 'verGridA', 'verGridB', 'verRowLabels', 'verColHeaders');
+  renderVerVec();
+  document.getElementById('verResult').innerHTML = '';
+}
+
+function renderVerVec() {
+  const wrap = document.getElementById('verVecWrap');
+  wrap.innerHTML = '';
+  for (let c = 0; c < V_COLS; c++) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px';
+    row.innerHTML = `<span style="font-size:11px;color:var(--muted);font-family:IBM Plex Mono,monospace;width:24px">x${subscript(c+1)}</span>
+      <input type="number" class="cell" step="any" id="vvec_${c}" style="width:80px">`;
+    wrap.appendChild(row);
+  }
+}
+
+function clearVerify() {
+  for (let r = 0; r < V_ROWS; r++) {
+    for (let c = 0; c < V_COLS; c++) { const el = document.getElementById(`v_${r}_${c}`); if (el) el.value = ''; }
+    const b = document.getElementById(`v_b_${r}_0`); if (b) b.value = '';
+  }
+  for (let c = 0; c < V_COLS; c++) { const el = document.getElementById(`vvec_${c}`); if (el) el.value = ''; }
+  document.getElementById('verResult').innerHTML = '';
+}
+
+function calcVerify() {
+  const err = document.getElementById('verErr');
+  err.classList.remove('show');
+
+  const aug = getAugMatrix('v', V_ROWS, V_COLS);
+  const A = aug.map(r => r.slice(0, V_COLS));
+  const b = aug.map(r => r[V_COLS]);
+  const x = [];
+  for (let c = 0; c < V_COLS; c++) {
+    const el = document.getElementById(`vvec_${c}`);
+    if (!el || el.value === '') { err.textContent = `Preenche o valor de x${subscript(c+1)}.`; err.classList.add('show'); return; }
+    x.push(parseFloat(el.value) || 0);
+  }
+
+  let allOk = true;
+  let html = `<div class="steps"><div class="steps-header"><h3>Verificação equação a equação</h3><hr></div>`;
+
+  for (let r = 0; r < V_ROWS; r++) {
+    let lhs = 0;
+    let eqStr = A[r].map((a, c) => `${toFrac(a)}·x${subscript(c+1)}`).join(' + ') + ' = ' + toFrac(b[r]);
+    for (let c = 0; c < V_COLS; c++) lhs += A[r][c] * x[c];
+    const ok = Math.abs(lhs - b[r]) < 1e-6;
+    if (!ok) allOk = false;
+
+    html += `<div class="verify-row">
+      <span class="${ok ? 'vr-ok' : 'vr-fail'}" style="font-size:1.1rem">${ok ? '✓' : '✗'}</span>
+      <span class="vr-eq">Eq. ${r+1}: &nbsp;${A[r].map((a,c) => `${fmtPlain(a)}·(${fmtPlain(x[c])})`).join(' + ')}</span>
+      <span class="vr-val">${toFrac(lhs)}</span>
+      <span class="vr-eq" style="text-align:right">= ${toFrac(b[r])} &nbsp; ${ok ? '✓' : '✗'}</span>
+    </div>`;
+  }
+
+  html += `<div class="sys-result-badge ${allOk ? 'possible' : 'impossible'}" style="margin-top:14px">
+    <div class="srb-icon">${allOk ? '✅' : '❌'}</div>
+    <div>
+      <div class="srb-text">${allOk ? 'É solução do sistema' : 'Não é solução do sistema'}</div>
+      <div class="srb-sub">x = (${x.map(fmtPlain).join(', ')}) ${allOk ? 'satisfaz todas as equações' : 'não satisfaz todas as equações'}</div>
+    </div>
+  </div>`;
+  html += `</div>`;
+  document.getElementById('verResult').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// CLASSIFY PAGE
+// ═══════════════════════════════════════════════
+function clasDim(axis, d) {
+  if (axis === 'r') C_ROWS = Math.max(1, Math.min(8, C_ROWS + d));
+  else C_COLS = Math.max(1, Math.min(8, C_COLS + d));
+  document.getElementById('clasRows').value = C_ROWS;
+  document.getElementById('clasCols').value = C_COLS;
+  renderAugGrid('cl', C_ROWS, C_COLS, 'clasGridA', 'clasGridB', 'clasRowLabels', 'clasColHeaders');
+  document.getElementById('clasResult').innerHTML = '';
+  document.getElementById('clasSteps').innerHTML = '';
+}
+
+function randClas() {
+  // Generate a system with controlled type
+  const type = Math.random();
+  for (let r = 0; r < C_ROWS; r++) {
+    for (let c = 0; c < C_COLS; c++) {
+      const el = document.getElementById(`cl_${r}_${c}`);
+      if (el) el.value = Math.floor(Math.random() * 7) - 3;
+    }
+    const b = document.getElementById(`cl_b_${r}_0`);
+    if (b) b.value = Math.floor(Math.random() * 7) - 3;
+  }
+}
+
+function clearClas() {
+  for (let r = 0; r < C_ROWS; r++) {
+    for (let c = 0; c < C_COLS; c++) { const el = document.getElementById(`cl_${r}_${c}`); if (el) el.value = ''; }
+    const b = document.getElementById(`cl_b_${r}_0`); if (b) b.value = '';
+  }
+  document.getElementById('clasResult').innerHTML = '';
+  document.getElementById('clasSteps').innerHTML = '';
+}
+
+function calcClas() {
+  const aug = getAugMatrix('cl', C_ROWS, C_COLS);
+  const n = C_COLS;
+
+  // Rank of A (without last col)
+  const augA = aug.map(r => r.slice(0, n).concat([0]));
+  const { rank: rankA, rref: rrefA, pivotCols } = gaussJordan(augA);
+  const { rank: rankAug, rref } = gaussJordan(aug.map(r => [...r]));
+
+  let type, badgeClass;
+  if (rankAug > rankA) { type = 'SI'; badgeClass = 'impossible'; }
+  else if (rankA === n) { type = 'SPD'; badgeClass = 'possible'; }
+  else { type = 'SPI'; badgeClass = 'indeterminate'; }
+
+  const labels = { SI: 'Sistema Impossível', SPD: 'Sistema Possível Determinado (SPD)', SPI: 'Sistema Possível Indeterminado (SPI)' };
+  const icons = { SI: '❌', SPD: '✅', SPI: '♾️' };
+  const subs = {
+    SI: `car(A) = ${rankA}, car([A|b]) = ${rankAug} → car([A|b]) > car(A) → Impossível`,
+    SPD: `car(A) = car([A|b]) = n = ${n} → Solução única`,
+    SPI: `car(A) = car([A|b]) = ${rankA} < n = ${n} → ${n - rankA} grau(s) de liberdade`
+  };
+
+  // Prop grid
+  let res = `<div class="prop-grid">
+    <div class="prop-card"><div class="pc-label">car(A)</div><div class="pc-val acc">${rankA}</div><div class="pc-sub">Posto de A</div></div>
+    <div class="prop-card"><div class="pc-label">car([A|b])</div><div class="pc-val ${rankAug > rankA ? 'bad' : 'acc'}">${rankAug}</div><div class="pc-sub">Posto da aumentada</div></div>
+    <div class="prop-card"><div class="pc-label">n (incógnitas)</div><div class="pc-val acc">${n}</div><div class="pc-sub">Nº de variáveis</div></div>
+    <div class="prop-card"><div class="pc-label">Graus liberdade</div><div class="pc-val ${type === 'SPI' ? 'warn' : type === 'SI' ? 'bad' : ''}">${type === 'SI' ? '—' : n - rankA}</div><div class="pc-sub">n − car(A)</div></div>
+  </div>`;
+
+  res += `<div class="sys-result-badge ${badgeClass}">
+    <div class="srb-icon">${icons[type]}</div>
+    <div><div class="srb-text">${labels[type]}</div><div class="srb-sub">${subs[type]}</div></div>
+  </div>`;
+
+  document.getElementById('clasResult').innerHTML = res;
+
+  // Steps
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Análise pelo Teorema de Rouché-Capelli</h3><hr></div>`;
+
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op init">PASSO 1</span> Matriz aumentada [A | b]</div>
+    ${renderAugDisplay(aug, [], [], n, -1)}
+  </div>`;
+
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op elim">PASSO 2</span> RREF da matriz A</div>
+    ${renderAugDisplay(rrefA, pivotCols, [], n, -1)}
+    <div class="info-box" style="margin-top:10px">car(A) = <strong class="hi">${rankA}</strong> (nº de linhas não-nulas na RREF de A)</div>
+  </div>`;
+
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op back">PASSO 3</span> RREF da matriz aumentada [A|b]</div>
+    ${renderAugDisplay(rref, [], [], n, -1)}
+    <div class="info-box" style="margin-top:10px">car([A|b]) = <strong class="${rankAug > rankA ? 'hr' : 'hi'}">${rankAug}</strong></div>
+  </div>`;
+
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op done">CONCLUSÃO</span> Teorema de Rouché-Capelli</div>
+    <div class="info-box">
+      car(A) = <strong class="hi">${rankA}</strong> &nbsp;·&nbsp;
+      car([A|b]) = <strong class="${rankAug > rankA ? 'hr' : 'hi'}">${rankAug}</strong> &nbsp;·&nbsp;
+      n = <strong>${n}</strong><br><br>
+      ${type === 'SI'
+        ? `<span class="hr">car([A|b]) = ${rankAug} > car(A) = ${rankA} → <strong>Sistema Impossível (SI)</strong><br>Existe pelo menos uma equação 0 = c (c ≠ 0) na forma escalonada.</span>`
+        : type === 'SPD'
+        ? `<span class="hg">car(A) = car([A|b]) = n = ${n} → <strong>Sistema Possível Determinado (SPD)</strong><br>Solução única. A é invertível.</span>`
+        : `<span class="hy">car(A) = car([A|b]) = ${rankA} < n = ${n} → <strong>Sistema Possível Indeterminado (SPI)</strong><br>${n - rankA} variável(is) livre(s). Infinitas soluções.</span>`}
+    </div>
+  </div>`;
+
+  stepsHTML += `</div>`;
+  document.getElementById('clasSteps').innerHTML = stepsHTML;
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+renderAugGrid('s', S_ROWS, S_COLS, 'solveGridA', 'solveGridB', 'solveRowLabels', 'solveColHeaders');
+renderAugGrid('v', V_ROWS, V_COLS, 'verGridA', 'verGridB', 'verRowLabels', 'verColHeaders');
+renderAugGrid('cl', C_ROWS, C_COLS, 'clasGridA', 'clasGridB', 'clasRowLabels', 'clasColHeaders');
+renderVerVec();
+</script>
+</body>
+</html>

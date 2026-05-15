@@ -421,6 +421,9 @@ body{
   <div class="nav-item" onclick="showPage('classificar')">
     <div class="icon">🏷️</div> Classificar <span class="badge">tipo</span>
   </div>
+  <div class="nav-item" onclick="showPage('cramer')">
+    <div class="icon">🎲</div> Regra de Cramer <span class="badge">det</span>
+  </div>
   <div class="nav-section">Aprender</div>
   <div class="nav-item" onclick="showPage('teoria')">
     <div class="icon">📖</div> Teoria <span class="badge">guia</span>
@@ -451,6 +454,7 @@ body{
     <div class="drawer-item active" onclick="showPage('resolver');closeDrawer()"><div class="icon">📐</div> Resolver <span class="badge">Ax=b</span></div>
     <div class="drawer-item" onclick="showPage('verificar');closeDrawer()"><div class="icon">✅</div> Verificar Solução <span class="badge">check</span></div>
     <div class="drawer-item" onclick="showPage('classificar');closeDrawer()"><div class="icon">🏷️</div> Classificar <span class="badge">tipo</span></div>
+    <div class="drawer-item" onclick="showPage('cramer');closeDrawer()"><div class="icon">🎲</div> Regra de Cramer <span class="badge">det</span></div>
     <div class="drawer-section">Aprender</div>
     <div class="drawer-item" onclick="showPage('teoria');closeDrawer()"><div class="icon">📖</div> Teoria <span class="badge">guia</span></div>
     <div class="drawer-footer">Sistemas Lineares · JS puro</div>
@@ -715,25 +719,132 @@ body{
 
   <div class="tab-panel" id="tab-t-cramer">
     <div class="mat-step-block">
-      <div class="msb-label"><span class="msb-op init">REGRA</span> Regra de Cramer (apenas SPD, n = m)</div>
+      <div class="msb-label"><span class="msb-op init">DEF</span> O que é a Regra de Cramer?</div>
       <p style="font-size:12px;color:var(--muted);line-height:2">
-        Para um sistema quadrado n×n com det(A) ≠ 0 (SPD):<br><br>
-        <strong style="color:var(--acc)">x_i = det(A_i) / det(A)</strong><br><br>
-        onde A_i é a matriz obtida substituindo a i-ésima coluna de A pelo vetor b.<br><br>
-        Útil para sistemas pequenos (2×2 e 3×3). Para sistemas maiores, Gauss-Jordan é mais eficiente.
+        A Regra de Cramer é um método algébrico para resolver sistemas lineares <strong style="color:var(--text)">quadrados (n×n)</strong> onde a matriz dos coeficientes A é <strong style="color:var(--text)">invertível</strong> (det(A) ≠ 0).<br><br>
+        Para cada incógnita xᵢ, constrói-se uma nova matriz <strong style="color:var(--acc)">Aᵢ</strong>: copia-se A e substitui-se a <em>coluna i</em> pelo vetor dos termos independentes <strong style="color:var(--acc2)">b</strong>.<br><br>
+        A solução é dada diretamente por:<br>
+        <strong style="color:var(--green);font-size:1.05rem">xᵢ = det(Aᵢ) / det(A)</strong>
       </p>
     </div>
+
     <div class="mat-step-block">
-      <div class="msb-label"><span class="msb-op scale">EXEMPLO</span> Sistema 2×2</div>
-      <p style="font-size:12px;color:var(--muted);line-height:2.2;font-family:'IBM Plex Mono',monospace">
-        a₁x + b₁y = c₁<br>
-        a₂x + b₂y = c₂<br><br>
-        <span style="color:var(--text)">D = a₁b₂ − a₂b₁</span><br>
-        <span style="color:var(--acc)">x = (c₁b₂ − c₂b₁) / D</span><br>
-        <span style="color:var(--acc2)">y = (a₁c₂ − a₂c₁) / D</span>
+      <div class="msb-label"><span class="msb-op scale">PASSO A PASSO</span> Como aplicar</div>
+      <ol style="font-size:12px;color:var(--muted);line-height:2.5;padding-left:18px">
+        <li>Escreve o sistema na forma matricial <strong style="color:var(--text)">Ax = b</strong>.</li>
+        <li>Calcula <strong style="color:var(--acc)">det(A)</strong>. Se for 0, o método <strong style="color:var(--red)">não se aplica</strong> — usa Gauss-Jordan.</li>
+        <li>Para cada incógnita xᵢ (i = 1, …, n):<br>
+          &nbsp;&nbsp;→ Cria <strong style="color:var(--gold)">Aᵢ</strong> substituindo a coluna <em>i</em> de A pelo vetor <strong>b</strong>.<br>
+          &nbsp;&nbsp;→ Calcula <strong style="color:var(--gold)">det(Aᵢ)</strong>.</li>
+        <li>Calcula <strong style="color:var(--green)">xᵢ = det(Aᵢ) / det(A)</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op elim">EXEMPLO</span> Sistema 2×2 explícito</div>
+      <p style="font-size:12px;color:var(--muted);line-height:2.3;font-family:'IBM Plex Mono',monospace">
+        <span style="color:var(--text)">Sistema:</span><br>
+        &nbsp;&nbsp;a₁x + b₁y = c₁<br>
+        &nbsp;&nbsp;a₂x + b₂y = c₂<br><br>
+        <span style="color:var(--text)">Passo 1 — det(A):</span><br>
+        &nbsp;&nbsp;<span style="color:var(--acc)">D = det(A) = a₁b₂ − b₁a₂</span><br><br>
+        <span style="color:var(--text)">Passo 2 — det(A₁): substitui coluna 1 por b</span><br>
+        &nbsp;&nbsp;<span style="color:var(--gold)">D₁ = det(A₁) = c₁b₂ − b₁c₂</span><br>
+        &nbsp;&nbsp;<span style="color:var(--green)">x = D₁ / D</span><br><br>
+        <span style="color:var(--text)">Passo 3 — det(A₂): substitui coluna 2 por b</span><br>
+        &nbsp;&nbsp;<span style="color:var(--gold)">D₂ = det(A₂) = a₁c₂ − c₁a₂</span><br>
+        &nbsp;&nbsp;<span style="color:var(--green)">y = D₂ / D</span>
       </p>
+    </div>
+
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op back">DETERMINANTES</span> Como calcular — métodos por dimensão</div>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2">
+        <strong style="color:var(--text)">2×2 — Fórmula direta:</strong><br>
+        <span style="font-family:'IBM Plex Mono',monospace;color:var(--acc)">det([[a,b],[c,d]]) = ad − bc</span><br><br>
+        <strong style="color:var(--text)">3×3 — Regra de Sarrus:</strong><br>
+        <span style="font-family:'IBM Plex Mono',monospace;color:var(--acc)">det = (a₁₁·a₂₂·a₃₃ + a₁₂·a₂₃·a₃₁ + a₁₃·a₂₁·a₃₂)</span><br>
+        <span style="font-family:'IBM Plex Mono',monospace;color:var(--acc)">    − (a₁₃·a₂₂·a₃₁ + a₁₁·a₂₃·a₃₂ + a₁₂·a₂₁·a₃₃)</span><br>
+        <span style="font-size:11px">(Diagonais principais positivas, diagonais secundárias negativas)</span><br><br>
+        <strong style="color:var(--text)">n×n — Expansão de Laplace (cofatores):</strong><br>
+        <span style="font-family:'IBM Plex Mono',monospace;color:var(--acc)">det(A) = Σⱼ aᵢⱼ · Cᵢⱼ</span>,  onde  <span style="font-family:'IBM Plex Mono',monospace">Cᵢⱼ = (−1)^(i+j) · det(Mᵢⱼ)</span><br>
+        <span style="color:var(--muted);font-size:11px">Mᵢⱼ é a submatriz obtida removendo a linha i e a coluna j.</span>
+      </div>
+    </div>
+
+    <div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op done">QUANDO USAR</span> Cramer vs. Gauss-Jordan</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px">
+        <div style="background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.2);border-radius:8px;padding:12px">
+          <div style="color:var(--green);font-weight:600;margin-bottom:6px">✓ Cramer é útil quando…</div>
+          <ul style="color:var(--muted);padding-left:14px;line-height:2">
+            <li>O sistema é 2×2 ou 3×3</li>
+            <li>Só precisas de uma incógnita específica</li>
+            <li>Trabalhas com sistemas simbólicos/paramétricos</li>
+            <li>Precisas de uma expressão fechada para a solução</li>
+          </ul>
+        </div>
+        <div style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:12px">
+          <div style="color:var(--red);font-weight:600;margin-bottom:6px">✗ Usa Gauss-Jordan quando…</div>
+          <ul style="color:var(--muted);padding-left:14px;line-height:2">
+            <li>O sistema é maior (4×4 ou mais)</li>
+            <li>det(A) = 0 (SI ou SPI)</li>
+            <li>O sistema não é quadrado (m ≠ n)</li>
+            <li>Precisas de maior eficiência computacional</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
+</section>
+
+<!-- ══════════════ CRAMER ══════════════ -->
+<section class="page" id="page-cramer">
+  <div class="page-header">
+    <a class="back" href="index.html">← Matrix Lab</a>
+    <h2>Regra de Cramer</h2>
+    <p>Resolve sistemas lineares quadrados com determinante não-nulo. x<sub>i</sub> = det(A<sub>i</sub>) / det(A), onde A<sub>i</sub> é A com a coluna i substituída por b.</p>
+  </div>
+
+  <div class="dim-bar">
+    <div class="dim-card">
+      <label>Dimensão (quadrada)</label>
+      <div class="dim-row">
+        <button class="dbtn" onclick="craDim(-1)">−</button>
+        <input class="dval" id="craRows" value="2" readonly>
+        <button class="dbtn" onclick="craDim(1)">+</button>
+        <span>× n</span>
+      </div>
+    </div>
+    <div class="dim-card" style="justify-content:center">
+      <label>Máximo recomendado</label>
+      <div style="font-size:12px;color:var(--muted);padding-top:4px" id="craNote">até 4×4</div>
+    </div>
+  </div>
+
+  <div id="craErr" class="err"></div>
+
+  <div class="aug-input-area">
+    <div class="aug-label">Matriz aumentada [A | b]</div>
+    <div id="craColHeaders" class="col-headers" style="padding-left:30px"></div>
+    <div class="aug-grid-wrap">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-right:6px" id="craRowLabels"></div>
+      <span class="bracket-l">[</span>
+      <div id="craGridA" class="aug-grid"></div>
+      <div class="aug-sep-col"></div>
+      <div id="craGridB" class="aug-grid"></div>
+      <span class="bracket-r">]</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="calcCramer()">Resolver</button>
+    <button class="btn-rnd" onclick="randCramer()">Aleatório</button>
+    <button class="btn-secondary" onclick="clearCramer()">Limpar</button>
+  </div>
+
+  <div id="craResult"></div>
+  <div id="craSteps"></div>
 </section>
 
 </main>
@@ -750,7 +861,11 @@ body{
   </button>
   <button class="bn-item" id="bn-classificar" onclick="showPage('classificar')">
     <span class="bn-icon">🏷️</span>
-    <span class="bn-label">Classificar</span>
+    <span class="bn-label">Classif.</span>
+  </button>
+  <button class="bn-item" id="bn-cramer" onclick="showPage('cramer')">
+    <span class="bn-icon">🎲</span>
+    <span class="bn-label">Cramer</span>
   </button>
   <button class="bn-item" id="bn-teoria" onclick="showPage('teoria')">
     <span class="bn-icon">📖</span>
@@ -772,6 +887,8 @@ let S_ROWS = 3, S_COLS = 3;
 let V_ROWS = 3, V_COLS = 3;
 // Classify
 let C_ROWS = 3, C_COLS = 3;
+// Cramer
+let CR_DIM = 2;
 
 // ═══════════════════════════════════════════════
 // NAV
@@ -785,6 +902,7 @@ function showPage(id) {
     if (n.textContent.toLowerCase().includes(id === 'resolver' ? 'resolver' :
         id === 'verificar' ? 'verificar' :
         id === 'classificar' ? 'classif' :
+        id === 'cramer' ? 'cramer' :
         id === 'teoria' ? 'teoria' : '___'))
       n.classList.add('active');
   });
@@ -1419,11 +1537,230 @@ function calcClas() {
 }
 
 // ═══════════════════════════════════════════════
-// INIT
+// DETERMINANT CALCULATOR (Laplace Expansion)
 // ═══════════════════════════════════════════════
+function detValue(M) {
+  const n = M.length;
+  if (n === 1) return M[0][0];
+  if (n === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  let d = 0;
+  for (let j = 0; j < n; j++) {
+    d += M[0][j] * Math.pow(-1, j) * detValue(getSubmatrix(M, 0, j));
+  }
+  return d;
+}
+
+function getSubmatrix(M, skipRow, skipCol) {
+  return M.filter((_, r) => r !== skipRow).map(row => row.filter((_, c) => c !== skipCol));
+}
+
+// Render a plain matrix (no augmented separator) for Cramer step display
+// highlightCols: array of col indices to highlight (the substituted column)
+function renderPlainMatrix(M, highlightCols, label) {
+  const rows = M.length, cols = M[0].length;
+  let html = `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px">`;
+  if (label) html += `<div style="font-size:10px;color:var(--muted);letter-spacing:.1em;font-family:'IBM Plex Mono',monospace;margin-bottom:2px">${label}</div>`;
+  html += `<div class="aug-display"><span class="bracket">[</span><table>`;
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><td class="row-lbl" style="background:transparent;border:none;color:var(--muted);font-size:9px;width:20px">L${r+1}</td>`;
+    for (let c = 0; c < cols; c++) {
+      const isHL = highlightCols && highlightCols.includes(c);
+      const isZero = Math.abs(M[r][c]) < 1e-9;
+      let cls = '';
+      if (isHL) cls = 'changed';
+      else if (isZero) cls = 'zero';
+      html += `<td class="${cls}">${toFrac(M[r][c])}</td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</table><span class="bracket">]</span></div></div>`;
+  return html;
+}
+
+// Generate full Laplace expansion string for a 2x2 or 3x3 matrix
+function detExpandHTML(M, varName) {
+  const n = M.length;
+  if (n === 1) {
+    return `det(${varName}) = ${toFrac(M[0][0])} = <strong class="hg">${toFrac(M[0][0])}</strong>`;
+  }
+  if (n === 2) {
+    const a=M[0][0], b=M[0][1], c=M[1][0], d=M[1][1];
+    const val = a*d - b*c;
+    return `det(${varName}) = (${toFrac(a)})(${toFrac(d)}) − (${toFrac(b)})(${toFrac(c)}) = ${toFrac(a*d)} − (${toFrac(b*c)}) = <strong class="hg">${toFrac(val)}</strong>`;
+  }
+  if (n === 3) {
+    // Sarrus rule display
+    const m = M;
+    const t1 = m[0][0]*m[1][1]*m[2][2];
+    const t2 = m[0][1]*m[1][2]*m[2][0];
+    const t3 = m[0][2]*m[1][0]*m[2][1];
+    const t4 = m[0][2]*m[1][1]*m[2][0];
+    const t5 = m[0][0]*m[1][2]*m[2][1];
+    const t6 = m[0][1]*m[1][0]*m[2][2];
+    const val = t1+t2+t3-t4-t5-t6;
+    const s = v => toFrac(v);
+    return `<span style="font-size:11px">Regra de Sarrus:<br>
+      det(${varName}) = (${s(m[0][0])}·${s(m[1][1])}·${s(m[2][2])}) + (${s(m[0][1])}·${s(m[1][2])}·${s(m[2][0])}) + (${s(m[0][2])}·${s(m[1][0])}·${s(m[2][1])})<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− (${s(m[0][2])}·${s(m[1][1])}·${s(m[2][0])}) − (${s(m[0][0])}·${s(m[1][2])}·${s(m[2][1])}) − (${s(m[0][1])}·${s(m[1][0])}·${s(m[2][2])})<br>
+      &nbsp;= ${s(t1)} + ${s(t2)} + ${s(t3)} − ${s(t4)} − ${s(t5)} − ${s(t6)}<br>
+      &nbsp;= <strong class="hg">${toFrac(val)}</strong></span>`;
+  }
+  // n >= 4: Laplace along row 0
+  const val = detValue(M);
+  let terms = [];
+  for (let j = 0; j < n; j++) {
+    const sign = Math.pow(-1, j);
+    const cofactor = sign * detValue(getSubmatrix(M, 0, j));
+    const term = M[0][j] * cofactor;
+    terms.push(`(${toFrac(M[0][j])} × ${toFrac(cofactor)})`);
+  }
+  return `<span style="font-size:11px">Expansão de Laplace (linha 1):<br>
+    det(${varName}) = ${terms.join(' + ')}<br>
+    = <strong class="hg">${toFrac(val)}</strong></span>`;
+}
+
+// ═══════════════════════════════════════════════
+// CRAMER PAGE
+// ═══════════════════════════════════════════════
+function craDim(d) {
+  CR_DIM = Math.max(2, Math.min(5, CR_DIM + d));
+  document.getElementById('craRows').value = CR_DIM;
+  document.getElementById('craNote').textContent = CR_DIM <= 4 ? 'até 4×4 (rápido)' : '⚠️ Cálculo lento';
+  renderAugGrid('cra', CR_DIM, CR_DIM, 'craGridA', 'craGridB', 'craRowLabels', 'craColHeaders');
+  document.getElementById('craResult').innerHTML = '';
+  document.getElementById('craSteps').innerHTML = '';
+}
+
+function randCramer() {
+  for (let r = 0; r < CR_DIM; r++) {
+    for (let c = 0; c < CR_DIM; c++) {
+      const el = document.getElementById(`cra_${r}_${c}`);
+      if (el) el.value = Math.floor(Math.random() * 9) - 4;
+    }
+    const b = document.getElementById(`cra_b_${r}_0`);
+    if (b) b.value = Math.floor(Math.random() * 9) - 4;
+  }
+}
+
+function clearCramer() {
+  for (let r = 0; r < CR_DIM; r++) {
+    for (let c = 0; c < CR_DIM; c++) {
+      const el = document.getElementById(`cra_${r}_${c}`);
+      if (el) el.value = '';
+    }
+    const b = document.getElementById(`cra_b_${r}_0`);
+    if (b) b.value = '';
+  }
+  document.getElementById('craResult').innerHTML = '';
+  document.getElementById('craSteps').innerHTML = '';
+}
+
+function calcCramer() {
+  const err = document.getElementById('craErr');
+  err.classList.remove('show');
+  const n = CR_DIM;
+  const aug = getAugMatrix('cra', n, n);
+  const A = aug.map(r => r.slice(0, n));
+  const b = aug.map(r => r[n]);
+
+  const detA = detValue(A);
+  let resHTML = '';
+  let stepsHTML = `<div class="steps"><div class="steps-header"><h3>Regra de Cramer — Passo a Passo</h3><hr></div>`;
+
+  // ── PASSO 0: Apresentar o sistema
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op init">PASSO 0</span> Sistema introduzido na forma matricial Ax = b</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:8px">
+      ${renderPlainMatrix(A, [], 'A (coeficientes)')}
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:2px">b (termos ind.)</div>
+        <div class="aug-display"><span class="bracket">[</span><table>
+          ${b.map((v,i) => `<tr><td class="row-lbl" style="background:transparent;border:none;color:var(--muted);font-size:9px;width:20px">L${i+1}</td><td class="b-col">${toFrac(v)}</td></tr>`).join('')}
+        </table><span class="bracket">]</span></div>
+      </div>
+    </div>
+    <div class="info-box" style="margin-top:12px">
+      A Regra de Cramer aplica-se a sistemas <strong>quadrados n×n</strong> onde <strong>det(A) ≠ 0</strong>.<br>
+      Fórmula: <strong class="hi">x<sub>i</sub> = det(A<sub>i</sub>) / det(A)</strong>, onde A<sub>i</sub> é a matriz A com a coluna <em>i</em> substituída pelo vetor <strong>b</strong>.
+    </div>
+  </div>`;
+
+  // ── PASSO 1: Calcular det(A)
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op init">PASSO 1</span> Calcular det(A) — verificar se Cramer se aplica</div>
+    ${renderPlainMatrix(A, [], 'A')}
+    <div class="info-box" style="margin-top:12px;font-family:'IBM Plex Mono',monospace">
+      ${detExpandHTML(A, 'A')}<br>`;
+
+  if (Math.abs(detA) < 1e-9) {
+    stepsHTML += `<span class="hr">⚠ det(A) = 0 → A é singular. A Regra de Cramer <strong>não se aplica</strong>.<br>O sistema pode ser impossível (SI) ou indeterminado (SPI). Utiliza Gauss-Jordan.</span>`;
+    stepsHTML += `</div></div></div>`;
+    resHTML = `<div class="sys-result-badge impossible">
+      <div class="srb-icon">✗</div>
+      <div><div class="srb-text">Cramer não se aplica — det(A) = 0</div>
+      <div class="srb-sub">A matriz A é singular. Use o método de Gauss-Jordan para resolver.</div></div>
+    </div>`;
+    document.getElementById('craResult').innerHTML = resHTML;
+    document.getElementById('craSteps').innerHTML = stepsHTML;
+    return;
+  }
+
+  stepsHTML += `<span class="hg">✓ det(A) = ${toFrac(detA)} ≠ 0 → Sistema Possível Determinado. Cramer aplica-se!</span>`;
+  stepsHTML += `</div></div>`;
+
+  // ── PASSOS 2..n+1: Para cada incógnita
+  const sol = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const A_i = A.map(r => [...r]);
+    for (let r = 0; r < n; r++) A_i[r][i] = b[r];
+    const detA_i = detValue(A_i);
+    sol[i] = detA_i / detA;
+
+    stepsHTML += `<div class="mat-step-block">
+      <div class="msb-label"><span class="msb-op info">PASSO ${i+2}</span> Calcular x${subscript(i+1)} — construir A${subscript(i+1)} e calcular o seu determinante</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:8px">
+        ${renderPlainMatrix(A, [], 'A original')}
+        <div style="font-size:1.4rem;color:var(--muted);align-self:center">→</div>
+        ${renderPlainMatrix(A_i, [i], `A${subscript(i+1)} (col. ${i+1} ← b)`)}
+      </div>
+      <div class="info-box" style="margin-top:12px;font-family:'IBM Plex Mono',monospace">
+        A coluna ${i+1} de A foi substituída pelo vetor <strong class="hi">b</strong> para obter A${subscript(i+1)}.<br><br>
+        ${detExpandHTML(A_i, `A${subscript(i+1)}`)}<br><br>
+        <strong style="color:var(--acc)">x${subscript(i+1)} = det(A${subscript(i+1)}) / det(A) = ${toFrac(detA_i)} / ${toFrac(detA)} = <span class="hg">${toFrac(sol[i])}</span></strong>
+      </div>
+    </div>`;
+  }
+
+  // ── CONCLUSÃO
+  stepsHTML += `<div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op done">CONCLUSÃO</span> Solução do sistema</div>
+    <div class="info-box">
+      <strong>Resumo dos resultados:</strong><br><br>
+      ${sol.map((v,i) => `<strong class="hi">x${subscript(i+1)}</strong> = det(A${subscript(i+1)}) / det(A) = <strong class="hg">${toFrac(v)}</strong>`).join('<br>')}
+      <br><br>
+      <span style="color:var(--muted);font-size:11px">Verifica a solução substituindo na matriz original: A·x = b ✓</span>
+    </div>
+  </div>`;
+
+  stepsHTML += `</div>`;
+
+  resHTML = `<div class="sys-result-badge possible">
+    <div class="srb-icon">✓</div>
+    <div><div class="srb-text">Sistema Possível Determinado — Solução única</div>
+    <div class="srb-sub">det(A) = ${fmtPlain(detA)} ≠ 0 → Regra de Cramer aplicada com sucesso</div></div>
+  </div><div class="sol-grid">`;
+  for (let i = 0; i < n; i++) {
+    resHTML += `<div class="sol-var"><span class="sv-name">x${subscript(i+1)}</span><span class="sv-val">${toFrac(sol[i])}</span></div>`;
+  }
+  resHTML += `</div>`;
+
+  document.getElementById('craResult').innerHTML = resHTML;
+  document.getElementById('craSteps').innerHTML = stepsHTML;
+}// ═══════════════════════════════════════════════
 renderAugGrid('s', S_ROWS, S_COLS, 'solveGridA', 'solveGridB', 'solveRowLabels', 'solveColHeaders');
 renderAugGrid('v', V_ROWS, V_COLS, 'verGridA', 'verGridB', 'verRowLabels', 'verColHeaders');
 renderAugGrid('cl', C_ROWS, C_COLS, 'clasGridA', 'clasGridB', 'clasRowLabels', 'clasColHeaders');
+renderAugGrid('cra', CR_DIM, CR_DIM, 'craGridA', 'craGridB', 'craRowLabels', 'craColHeaders');
 renderVerVec();
 </script>
 </body>

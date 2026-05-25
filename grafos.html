@@ -290,12 +290,27 @@ body{
 /* MOBILE */
 @media(max-width:768px){
   .sidebar{display:none}
-  .main{padding:20px 16px 60px;max-height:unset}
+  .main{padding:16px 12px 80px;max-height:unset}
   .mobile-topbar{
     display:flex;align-items:center;justify-content:space-between;
     position:sticky;top:0;z-index:200;
     height:54px;background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;
   }
+  .graph-interactive{padding:12px 10px}
+  .graph-controls{gap:6px}
+  .btn-ctrl{font-size:11px;padding:6px 10px}
+  #graphCanvas{height:280px !important}
+  .home-grid{grid-template-columns:1fr 1fr}
+  .page-header h2{font-size:1.2rem}
+  .home-grid .home-card h3{font-size:.8rem}
+  h2[style*="2.6rem"]{font-size:1.8rem !important}
+  .def-block, .thm-block, .nota-block, .ex-block{padding:10px 12px}
+  .mat-step-block{padding:14px 12px}
+  .section-title{font-size:1rem}
+  .deg-table{font-size:11px}
+  .deg-table th, .deg-table td{padding:5px 8px}
+  .euler-badge{font-size:12px;padding:6px 12px}
+  .prop-list li{font-size:12px;padding:7px 10px}
 }
 @media(min-width:769px){
   .mobile-topbar{display:none}
@@ -1022,7 +1037,7 @@ body{
   <div class="graph-interactive">
     <div class="graph-controls">
       <button class="btn-ctrl" id="btnAddV" onclick="addVertex()">➕ Adicionar Vértice</button>
-      <button class="btn-ctrl" id="btnAddE" onclick="toggleEdgeMode()" id="edgeModeBtn">🔗 Adicionar Aresta</button>
+      <button class="btn-ctrl" id="edgeModeBtn" onclick="toggleEdgeMode()">🔗 Adicionar Aresta</button>
       <button class="btn-ctrl danger" onclick="clearGraph()">🗑️ Limpar</button>
       <button class="btn-ctrl" onclick="loadExample('k4')">K₄</button>
       <button class="btn-ctrl" onclick="loadExample('k33')">K₃,₃</button>
@@ -1033,6 +1048,7 @@ body{
     <div id="edgeModeInfo" style="display:none;background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.2);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--gold);margin-bottom:10px">
       ⚡ Modo aresta ativo — clica em dois vértices para os ligar. Clica novamente em "Adicionar Aresta" para cancelar.
     </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">💡 Clica/toca no canvas para adicionar vértice. Duplo-clique para remover.</div>
     <canvas id="graphCanvas" width="700" height="380" style="width:100%;height:380px;border-radius:8px;cursor:crosshair;background:#1c2128;display:block"></canvas>
 
     <div id="graphInfo" class="info-box" style="margin-top:12px">
@@ -1067,7 +1083,20 @@ function showPage(id) {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
   });
   document.querySelector('.main').scrollTo(0, 0);
+  if (id === 'explorador') resizeCanvas();
 }
+
+// ── CANVAS RESIZE ──
+function resizeCanvas() {
+  const isMobile = window.innerWidth <= 768;
+  const h = isMobile ? 280 : 380;
+  canvas.height = h;
+  canvas.style.height = h + 'px';
+  draw();
+}
+window.addEventListener('resize', () => {
+  resizeCanvas();
+});
 
 // ── MOBILE DRAWER ──
 function toggleDrawer() {
@@ -1302,6 +1331,13 @@ canvas.addEventListener('mousedown', e => {
     }
   } else {
     if (v) { dragVertex = v; dragOffX = v.x - x; dragOffY = v.y - y; }
+    else {
+      // click on empty canvas: add vertex here
+      const label = String.fromCharCode(65 + vertices.length % 26) + (vertices.length >= 26 ? Math.floor(vertices.length/26) : '');
+      vertices.push({ id: vertices.length, x, y, label });
+      draw();
+      analyze();
+    }
   }
 });
 
@@ -1328,9 +1364,54 @@ canvas.addEventListener('dblclick', e => {
 });
 
 // Touch support
-canvas.addEventListener('touchstart', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove', {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
-canvas.addEventListener('touchend', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); });
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (t.clientX - rect.left) * scaleX;
+  const y = (t.clientY - rect.top) * scaleY;
+  const v = getVertex(x, y);
+  if (edgeMode) {
+    if (v) {
+      if (!edgeFirst) { edgeFirst = v; draw(); }
+      else if (edgeFirst.id !== v.id) {
+        const exists = edges.some(e2 => (e2.a===edgeFirst.id&&e2.b===v.id)||(e2.a===v.id&&e2.b===edgeFirst.id));
+        if (!exists) edges.push({a: edgeFirst.id, b: v.id});
+        edgeFirst = null;
+        analyze();
+      }
+    }
+  } else {
+    if (v) { dragVertex = v; dragOffX = v.x - x; dragOffY = v.y - y; }
+    else {
+      // tap on empty: add vertex at that position
+      const label = String.fromCharCode(65 + vertices.length % 26) + (vertices.length >= 26 ? Math.floor(vertices.length/26) : '');
+      vertices.push({ id: vertices.length, x, y, label });
+      draw();
+      analyze();
+    }
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (dragVertex) {
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    dragVertex.x = (t.clientX - rect.left) * scaleX + dragOffX;
+    dragVertex.y = (t.clientY - rect.top) * scaleY + dragOffY;
+    draw();
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  dragVertex = null;
+}, {passive: false});
 
 function loadExample(name) {
   clearGraph();
@@ -1375,6 +1456,7 @@ function loadExample(name) {
 }
 
 // Initial draw
+resizeCanvas();
 draw();
 </script>
 </body>

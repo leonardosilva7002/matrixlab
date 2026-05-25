@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teoria de Grafos</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --s1: #161b22;
+  --s2: #1c2128;
+  --s3: #252d3a;
+  --acc: #58a6ff;
+  --acc2: #bc8cff;
+  --gold: #e3b341;
+  --green: #3fb950;
+  --red: #f85149;
+  --blue: #388bfd;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --border: #30363d;
+  --border2: #3d444d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px;
+  min-height:100vh;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  width:240px;min-width:240px;
+  background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+  overflow-y:auto;
+}
+.sidebar-logo{
+  padding:20px 16px 16px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo .tag{
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--green);background:rgba(63,185,80,.1);
+  border:1px solid rgba(63,185,80,.2);
+  padding:2px 8px;border-radius:4px;margin-bottom:8px;display:inline-block;
+  font-family:'IBM Plex Mono',monospace;
+}
+.sidebar-logo h1{font-size:1.1rem;font-weight:600;color:var(--text);line-height:1.3}
+.sidebar-logo p{font-size:12px;color:var(--muted);margin-top:3px}
+.nav-section{
+  padding:16px 16px 4px;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;margin:1px 8px;
+  border-radius:6px;cursor:pointer;
+  font-size:13px;color:var(--muted);
+  transition:all .15s;border:1px solid transparent;
+  user-select:none;text-decoration:none;
+}
+.nav-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.nav-item.active{background:rgba(63,185,80,.1);color:var(--green);border-color:rgba(63,185,80,.2)}
+.nav-item .icon{
+  width:24px;height:24px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.nav-item .badge{
+  margin-left:auto;font-size:10px;padding:1px 6px;
+  border-radius:4px;background:var(--s3);color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;
+}
+.nav-item.active .badge{background:rgba(63,185,80,.15);color:var(--green)}
+.sidebar-footer{
+  margin-top:auto;padding:14px 16px;
+  border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);
+}
+
+/* MAIN */
+.main{flex:1;padding:36px 40px 80px;min-width:0;overflow-y:auto;max-height:100vh}
+.page{display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:28px}
+.page-header h2{font-size:1.5rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:5px}
+.page-header p{font-size:13px;color:var(--muted);line-height:1.7;max-width:560px}
+
+/* CARDS */
+.home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:8px}
+.home-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:18px;cursor:pointer;transition:all .15s;
+}
+.home-card:hover{border-color:var(--border2);background:var(--s2)}
+.home-card .card-icon{font-size:1.5rem;margin-bottom:10px}
+.home-card h3{font-size:.9rem;font-weight:600;margin-bottom:5px;color:var(--text)}
+.home-card p{font-size:12px;color:var(--muted);line-height:1.6}
+.home-card .card-tag{
+  display:inline-block;margin-top:10px;font-size:10px;
+  padding:2px 8px;border-radius:4px;
+  background:rgba(63,185,80,.1);color:var(--green);border:1px solid rgba(63,185,80,.2);
+  font-family:'IBM Plex Mono',monospace;
+}
+
+/* STEPS/BLOCKS */
+.steps{margin-top:28px}
+.steps-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.steps-header h3{font-size:1rem;font-weight:600;color:var(--text)}
+.steps-header hr{flex:1;border:none;border-top:1px solid var(--border)}
+
+.mat-step-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;margin-bottom:12px;
+}
+.mat-step-block .msb-label{
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.msb-op{font-size:9px;padding:2px 10px;border-radius:3px;font-weight:600;letter-spacing:.1em}
+.msb-op.def{background:rgba(88,166,255,.12);color:var(--acc)}
+.msb-op.ex{background:rgba(63,185,80,.12);color:var(--green)}
+.msb-op.thm{background:rgba(255,209,102,.12);color:var(--gold)}
+.msb-op.nota{background:rgba(188,140,255,.12);color:var(--acc2)}
+.msb-op.prop{background:rgba(248,81,73,.12);color:var(--red)}
+.msb-op.done{background:rgba(255,99,200,.12);color:var(--acc2)}
+
+/* DEFINITION BLOCKS */
+.def-block{
+  background:rgba(88,166,255,.04);
+  border:1px solid rgba(88,166,255,.2);
+  border-left:3px solid var(--acc);
+  border-radius:0 8px 8px 0;
+  padding:14px 18px;margin-bottom:14px;
+}
+.def-block .def-title{
+  font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--acc);font-weight:600;margin-bottom:8px;
+}
+.def-block p{font-size:13px;color:var(--text);line-height:1.8}
+.def-block p strong{color:var(--acc);font-weight:600}
+
+.thm-block{
+  background:rgba(227,179,65,.04);
+  border:1px solid rgba(227,179,65,.2);
+  border-left:3px solid var(--gold);
+  border-radius:0 8px 8px 0;
+  padding:14px 18px;margin-bottom:14px;
+}
+.thm-block .thm-title{
+  font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;margin-bottom:8px;
+}
+.thm-block p{font-size:13px;color:var(--text);line-height:1.8}
+.thm-block p strong{color:var(--gold);font-weight:600}
+
+.nota-block{
+  background:rgba(188,140,255,.04);
+  border:1px solid rgba(188,140,255,.2);
+  border-left:3px solid var(--acc2);
+  border-radius:0 8px 8px 0;
+  padding:12px 18px;margin-bottom:14px;
+}
+.nota-block .nota-title{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--acc2);font-weight:600;margin-bottom:6px}
+.nota-block p{font-size:12px;color:var(--muted);line-height:1.8}
+.nota-block p strong{color:var(--text)}
+
+.ex-block{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:16px 18px;margin-bottom:14px;
+}
+.ex-block .ex-title{
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--green);font-weight:600;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.ex-block p, .ex-block li{font-size:13px;color:var(--muted);line-height:1.9}
+.ex-block strong{color:var(--text)}
+.ex-block ul, .ex-block ol{padding-left:20px;margin-top:8px}
+
+/* PROP LIST */
+.prop-list{list-style:none;padding:0;margin:0}
+.prop-list li{
+  padding:8px 12px;border-radius:6px;margin-bottom:4px;
+  background:var(--s2);border:1px solid var(--border);
+  font-size:13px;color:var(--muted);line-height:1.8;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.prop-list li .pill{
+  flex-shrink:0;margin-top:2px;
+  font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;letter-spacing:.08em;
+  font-family:'IBM Plex Mono',monospace;
+  background:rgba(88,166,255,.1);color:var(--acc);
+}
+.prop-list li strong{color:var(--text)}
+
+/* SECTION TITLE */
+.section-title{
+  font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;
+  margin-bottom:18px;display:flex;align-items:center;gap:12px;color:var(--text);
+}
+.section-title span{flex:1;height:1px;background:var(--border);display:inline-block}
+
+/* SVG GRAPH CANVAS */
+.graph-canvas{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:8px;
+}
+.graph-canvas svg{max-width:100%;height:auto}
+
+/* INTERACTIVE GRAPH */
+.graph-interactive{
+  background:var(--s2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;position:relative;
+}
+.graph-controls{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;
+}
+.btn-ctrl{
+  background:var(--s3);border:1px solid var(--border2);color:var(--muted);
+  font-family:'IBM Plex Sans',sans-serif;font-size:12px;
+  padding:7px 14px;border-radius:5px;cursor:pointer;transition:all .15s;
+}
+.btn-ctrl:hover{background:var(--acc);border-color:var(--acc);color:#0d1117}
+.btn-ctrl.active{background:rgba(63,185,80,.15);border-color:var(--green);color:var(--green)}
+.btn-ctrl.danger{border-color:rgba(248,81,73,.3);color:var(--red)}
+.btn-ctrl.danger:hover{background:rgba(248,81,73,.15)}
+.btn-primary{
+  background:var(--green);border:none;
+  color:#0d1117;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;
+  padding:10px 24px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.btn-primary:hover{background:#52d65d;box-shadow:0 4px 16px rgba(63,185,80,.25)}
+.btn-secondary{
+  background:transparent;border:1px solid var(--border2);color:var(--muted);
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+  padding:10px 20px;border-radius:6px;cursor:pointer;transition:all .15s;
+}
+.btn-secondary:hover{border-color:var(--red);color:var(--red)}
+
+/* INFO BOX */
+.info-box{
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:12px 16px;margin-top:12px;font-size:12px;color:var(--muted);line-height:1.9;
+}
+.info-box strong{color:var(--text)}
+.info-box .val{color:var(--acc);font-family:'IBM Plex Mono',monospace;font-weight:600}
+.info-box .val.good{color:var(--green)}
+.info-box .val.warn{color:var(--gold)}
+
+/* EULER RESULT */
+.euler-result{
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:14px 18px;margin-top:12px;
+}
+.euler-result .er-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.euler-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;
+  margin-right:8px;margin-bottom:8px;
+}
+.euler-badge.yes{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);color:var(--green)}
+.euler-badge.no{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:var(--red)}
+.euler-badge.maybe{background:rgba(227,179,65,.1);border:1px solid rgba(227,179,65,.25);color:var(--gold)}
+
+/* DEGREE TABLE */
+.deg-table{border-collapse:collapse;font-size:12px;width:100%;margin-top:10px}
+.deg-table th{
+  background:var(--s2);padding:8px 14px;border:1px solid var(--border);
+  color:var(--muted);font-weight:600;text-align:center;font-size:11px;letter-spacing:.06em;
+}
+.deg-table td{padding:7px 14px;border:1px solid var(--border);text-align:center;font-family:'IBM Plex Mono',monospace}
+.deg-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.deg-even{color:var(--green)}
+.deg-odd{color:var(--gold)}
+
+/* MOBILE */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:20px 16px 60px;max-height:unset}
+  .mobile-topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:200;
+    height:54px;background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;
+  }
+}
+@media(min-width:769px){
+  .mobile-topbar{display:none}
+  .mobile-drawer{display:none!important}
+}
+.mobile-topbar-logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--text)}
+.hamburger-btn{
+  width:40px;height:40px;border-radius:8px;background:var(--s2);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;transition:all .2s;
+}
+.hamburger-btn span{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-drawer{display:none;position:fixed;top:54px;left:0;right:0;bottom:0;z-index:190}
+.mobile-drawer.open{display:block}
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+.drawer-panel{
+  position:absolute;top:0;left:0;bottom:0;width:280px;
+  background:var(--s1);border-right:1px solid var(--border);
+  overflow-y:auto;padding-bottom:20px;
+  animation:slideInDrawer .25s ease;
+}
+@keyframes slideInDrawer{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.drawer-section{padding:14px 12px 4px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 16px;margin:2px 8px;border-radius:8px;cursor:pointer;
+  font-size:12px;color:var(--muted);transition:all .2s;border:1px solid transparent;
+  user-select:none;text-decoration:none;
+}
+.drawer-item:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+.drawer-item.active{background:rgba(63,185,80,.1);color:var(--green);border-color:rgba(63,185,80,.2)}
+.drawer-item .icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--s3)}
+.drawer-item .badge{margin-left:auto;font-size:9px;padding:2px 7px;border-radius:10px;background:var(--s3);color:var(--muted)}
+.drawer-footer{padding:14px 16px;border-top:1px solid var(--border);margin-top:10px;font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="tag">Grafos</div>
+    <h1>Graph<br>Lab</h1>
+    <p>Teoria de Grafos · Matemática Discreta</p>
+  </div>
+
+  <div class="nav-section">Navegação</div>
+  <a class="nav-item" href="index.html">
+    <div class="icon">🔢</div> Matrix Lab
+  </a>
+  <a class="nav-item" href="sistemas.html">
+    <div class="icon">📐</div> Sistemas Lin.
+  </a>
+
+  <div class="nav-section">Teoria de Grafos</div>
+  <div class="nav-item active" onclick="showPage('home')">
+    <div class="icon">🏠</div> Início <span class="badge">grafos</span>
+  </div>
+  <div class="nav-item" onclick="showPage('definicoes')">
+    <div class="icon">📖</div> Definições Básicas <span class="badge">I</span>
+  </div>
+  <div class="nav-item" onclick="showPage('subgrafos')">
+    <div class="icon">🔀</div> Subgrafos <span class="badge">II</span>
+  </div>
+  <div class="nav-item" onclick="showPage('bipartidos')">
+    <div class="icon">🔗</div> Bipartidos & Completos <span class="badge">III</span>
+  </div>
+  <div class="nav-item" onclick="showPage('cadeias')">
+    <div class="icon">⛓️</div> Cadeias & Caminhos <span class="badge">IV</span>
+  </div>
+  <div class="nav-item" onclick="showPage('euler')">
+    <div class="icon">🌐</div> Caminhos Eulerianos <span class="badge">V</span>
+  </div>
+
+  <div class="nav-section">Ferramenta</div>
+  <div class="nav-item" onclick="showPage('explorador')">
+    <div class="icon">🧪</div> Explorador de Grafo <span class="badge">lab</span>
+  </div>
+
+  <div class="sidebar-footer">
+    Matemática Discreta · IPCA
+  </div>
+</aside>
+
+<!-- MOBILE TOP BAR -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-logo">Graph Lab</div>
+  <div class="hamburger-btn" id="hamburgerBtn" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- MOBILE DRAWER -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel">
+    <div class="drawer-section">Navegação</div>
+    <a class="drawer-item" href="index.html"><div class="icon">🔢</div> Matrix Lab</a>
+    <a class="drawer-item" href="sistemas.html"><div class="icon">📐</div> Sistemas Lin.</a>
+    <div class="drawer-section">Teoria de Grafos</div>
+    <div class="drawer-item active" onclick="showPage('home');closeDrawer()"><div class="icon">🏠</div> Início</div>
+    <div class="drawer-item" onclick="showPage('definicoes');closeDrawer()"><div class="icon">📖</div> Definições Básicas <span class="badge">I</span></div>
+    <div class="drawer-item" onclick="showPage('subgrafos');closeDrawer()"><div class="icon">🔀</div> Subgrafos <span class="badge">II</span></div>
+    <div class="drawer-item" onclick="showPage('bipartidos');closeDrawer()"><div class="icon">🔗</div> Bipartidos & Completos <span class="badge">III</span></div>
+    <div class="drawer-item" onclick="showPage('cadeias');closeDrawer()"><div class="icon">⛓️</div> Cadeias & Caminhos <span class="badge">IV</span></div>
+    <div class="drawer-item" onclick="showPage('euler');closeDrawer()"><div class="icon">🌐</div> Caminhos Eulerianos <span class="badge">V</span></div>
+    <div class="drawer-item" onclick="showPage('explorador');closeDrawer()"><div class="icon">🧪</div> Explorador de Grafo</div>
+    <div class="drawer-footer">Matemática Discreta · IPCA</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HOME -->
+<section class="page active" id="page-home">
+  <div style="margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border)">
+    <div style="display:inline-block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--green);background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);padding:3px 10px;border-radius:2px;margin-bottom:16px">Graph Lab · Matemática Discreta</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:800;line-height:1.05;margin-bottom:14px">
+      Teoria de<br>
+      <span style="background:linear-gradient(135deg,var(--green),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Grafos</span>
+    </h2>
+    <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:560px">
+      Guia completo de teoria de grafos com definições, exemplos visuais, propriedades e ferramentas interativas. Baseado nos apontamentos das Aulas 11 e 13 da Parte II — Matemática Discreta.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+      <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--green)">📖 Definições completas</div>
+      <div style="background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--acc)">🔢 Exemplos numerados</div>
+      <div style="background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--gold)">⚡ Teoremas de Euler</div>
+      <div style="background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.2);border-radius:8px;padding:9px 14px;font-size:10px;color:var(--acc2)">🧪 Explorador interativo</div>
+    </div>
+  </div>
+
+  <div class="section-title">🗺️ Conteúdos <span></span></div>
+  <div class="home-grid">
+    <div class="home-card" onclick="showPage('definicoes')">
+      <div class="card-icon">📖</div>
+      <h3>I — Definições Básicas</h3>
+      <p>O que são grafos, vértices, arestas, grau, tipos de grafos (simples, conexo, regular, dígrafo).</p>
+      <div class="card-tag">Aula 11</div>
+    </div>
+    <div class="home-card" onclick="showPage('subgrafos')">
+      <div class="card-icon">🔀</div>
+      <h3>II — Subgrafos</h3>
+      <p>Subgrafo gerado, grafo parcial e subgrafo parcial. Diferenças e exemplos.</p>
+      <div class="card-tag">Aula 13</div>
+    </div>
+    <div class="home-card" onclick="showPage('bipartidos')">
+      <div class="card-icon">🔗</div>
+      <h3>III — Bipartidos & Completos</h3>
+      <p>Grafos completos Kₙ, grafos bipartidos, coloração de vértices e bipartidos completos Km,n.</p>
+      <div class="card-tag">Aula 13</div>
+    </div>
+    <div class="home-card" onclick="showPage('cadeias')">
+      <div class="card-icon">⛓️</div>
+      <h3>IV — Cadeias & Caminhos</h3>
+      <p>Cadeias, ciclos, caminhos simples, elementares, fechados e circuitos.</p>
+      <div class="card-tag">Aula 13</div>
+    </div>
+    <div class="home-card" onclick="showPage('euler')">
+      <div class="card-icon">🌐</div>
+      <h3>V — Caminhos Eulerianos</h3>
+      <p>Problema das 7 pontes, Teoremas de Euler, circuito euleriano e eulerização de grafos.</p>
+      <div class="card-tag">Aula 13</div>
+    </div>
+    <div class="home-card" onclick="showPage('explorador')">
+      <div class="card-icon">🧪</div>
+      <h3>Explorador Interativo</h3>
+      <p>Cria o teu próprio grafo, calcula graus e verifica se existe caminho ou circuito euleriano.</p>
+      <div class="card-tag">lab</div>
+    </div>
+  </div>
+
+  <!-- Quick reference -->
+  <div style="margin-top:40px">
+    <div class="section-title">⚡ Referência Rápida <span></span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+      <div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op thm">TEOREMA</span> Euler (1) — Caminho</div>
+        <p style="font-size:13px;color:var(--text);line-height:1.8">Um grafo conexo tem um <strong style="color:var(--gold)">caminho euleriano</strong> se e só se tiver <strong style="color:var(--gold)">exatamente 2 vértices de grau ímpar</strong>.</p>
+      </div>
+      <div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op thm">TEOREMA</span> Euler (2) — Circuito</div>
+        <p style="font-size:13px;color:var(--text);line-height:1.8">Um grafo conexo tem um <strong style="color:var(--gold)">circuito euleriano</strong> se e só se <strong style="color:var(--gold)">todos os vértices tiverem grau par</strong>.</p>
+      </div>
+      <div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op def">FÓRMULA</span> Grau de vértices</div>
+        <p style="font-size:13px;color:var(--text);line-height:1.8">A soma dos graus de todos os vértices é igual a <strong style="color:var(--acc)">2 × número de arestas</strong>. ∑ deg(v) = 2|A|</p>
+      </div>
+      <div class="mat-step-block">
+        <div class="msb-label"><span class="msb-op def">FÓRMULA</span> Grafo Completo Kₙ</div>
+        <p style="font-size:13px;color:var(--text);line-height:1.8">Um grafo completo com <em>n</em> vértices tem exatamente <strong style="color:var(--acc)">n(n−1)/2 arestas</strong>. Cada vértice tem grau <em>n−1</em>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEFINIÇÕES BÁSICAS -->
+<section class="page" id="page-definicoes">
+  <div class="page-header">
+    <h2>📖 I — Definições Básicas</h2>
+    <p>Conceitos fundamentais da teoria de grafos: o que são grafos, vértices, arestas e os diferentes tipos existentes.</p>
+  </div>
+
+  <div class="section-title">Conceito Geral <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Grafo</div>
+    <p>Chama-se <strong>grafo G = (V, A)</strong> a uma estrutura constituída por um conjunto finito, não vazio, <strong>V de vértices</strong> (também designados por nós) e um conjunto <strong>A finito de arestas</strong> (também designadas por arcos) de tal forma que cada aresta está associada a um par de vértices.</p>
+  </div>
+
+  <div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op nota">NOTAS</span> Terminologia</div>
+    <ul class="prop-list">
+      <li><span class="pill">Ordem</span><span><strong>Ordem</strong> de um grafo G é o <strong>número de vértices</strong> de G.</span></li>
+      <li><span class="pill">Dimensão</span><span><strong>Dimensão</strong> de um grafo G é o <strong>número de arestas</strong> de G.</span></li>
+      <li><span class="pill">Arco</span><span><strong>Arcos</strong> são arestas com orientação, representados por pares ordenados de vértices. O primeiro vértice chama-se <strong>extremidade inicial</strong> e o último <strong>extremidade final</strong>.</span></li>
+    </ul>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 1 — Grafo simples</div>
+    <p>Um grafo com vértices <strong>O, T, L</strong> e arestas <strong>{O,T}</strong> e <strong>{T,L}</strong>:</p>
+    <p style="margin-top:8px"><code style="background:var(--s1);border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;color:var(--acc)">V = {O, T, L} &nbsp;&nbsp; A = {{O,T}, {T,L}}</code></p>
+    <p style="margin-top:8px">Nota: Escrever {O,T} ou {T,O} tem o mesmo significado (aresta não orientada).</p>
+    <div style="margin-top:14px" class="graph-canvas">
+      <svg viewBox="0 0 300 100" width="300" height="100">
+        <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+        <circle cx="50" cy="50" r="16" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+        <circle cx="150" cy="50" r="16" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+        <circle cx="250" cy="50" r="16" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+        <line x1="66" y1="50" x2="134" y2="50" stroke="#58a6ff" stroke-width="1.5"/>
+        <line x1="166" y1="50" x2="234" y2="50" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="50" y="55" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="IBM Plex Mono">O</text>
+        <text x="150" y="55" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="IBM Plex Mono">T</text>
+        <text x="250" y="55" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="IBM Plex Mono">L</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:28px">Definições Específicas <span></span></div>
+
+  <ul class="prop-list" style="margin-bottom:16px">
+    <li><span class="pill">Laço</span><strong>Laço (lacete)</strong> — aresta que liga um vértice a ele próprio.</li>
+    <li><span class="pill">Adjacentes</span><strong>Arestas adjacentes</strong> — arestas incidentes no mesmo vértice.</li>
+    <li><span class="pill">Paralelas</span><strong>Arestas paralelas</strong> — arestas distintas que ligam os mesmos vértices.</li>
+    <li><span class="pill">Isolado</span><strong>Vértice isolado</strong> — vértice sem arestas incidentes.</li>
+    <li><span class="pill">Terminal</span><strong>Vértice terminal</strong> — vértice com apenas uma aresta incidente.</li>
+    <li><span class="pill">Vizinhos</span><strong>Vértices adjacentes</strong> — vértices ligados por pelo menos uma aresta.</li>
+    <li><span class="pill">Nulo</span><strong>Grafo nulo</strong> — grafo sem arestas.</li>
+    <li><span class="pill">Trivial</span><strong>Grafo trivial</strong> — sem arestas e com um único vértice.</li>
+    <li><span class="pill">Incidente</span><strong>Aresta incidente</strong> — aresta que une dois vértices diz-se incidente em cada um deles.</li>
+  </ul>
+
+  <div class="section-title">Tipos de Grafos <span></span></div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px">
+    <div class="def-block">
+      <div class="def-title">Grafo Simples</div>
+      <p>Grafo que <strong>não tem arestas paralelas nem lacetes</strong>. Se tiver algum destes elementos, chama-se <strong>multigrafo</strong>.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Grafo Conexo</div>
+      <p>Grafo onde <strong>existe sempre uma sequência de arestas a unir quaisquer dois dos seus vértices</strong>.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Dígrafo (Grafo Orientado)</div>
+      <p>Grafo em que as arestas têm <strong>orientações definidas</strong> (sentidos indicados por uma seta na representação gráfica).</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Grafo Regular</div>
+      <p>Grafo em que <strong>todos os vértices têm o mesmo grau</strong>.</p>
+    </div>
+  </div>
+
+  <div class="section-title">Grau de um Vértice <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Grau (Valência)</div>
+    <p><strong>Grau deg(v)</strong> de um vértice é o número de arestas que nele concorrem. Um vértice tem <strong>grau par</strong> se concorre um número par de arestas, e <strong>grau ímpar</strong> no caso contrário. <strong>Os lacetes contam como incidindo duas vezes</strong> no vértice.</p>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 5 — Graus</div>
+    <p>Num grafo com vértices 1, 2, 3, 4 onde há arestas paralelas entre 2 e 3:</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:13px">
+        <span style="color:var(--muted)">deg(1) = </span><span style="color:var(--green)">4</span><br>
+        <span style="color:var(--muted)">deg(2) = </span><span style="color:var(--green)">4</span><br>
+        <span style="color:var(--muted)">deg(3) = </span><span style="color:var(--green)">4</span><br>
+        <span style="color:var(--muted)">deg(4) = </span><span style="color:var(--green)">2</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op nota">DÍGRAFOS</span> Semi-graus</div>
+    <ul class="prop-list">
+      <li><span class="pill">deg⁺</span><strong>Semi-grau exterior deg⁺(v)</strong> — número de arestas de que v é a extremidade inicial (os lacetes contam uma vez).</li>
+      <li><span class="pill">deg⁻</span><strong>Semi-grau interior deg⁻(v)</strong> — número de arestas de que v é a extremidade final (os lacetes contam uma vez).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SUBGRAFOS -->
+<section class="page" id="page-subgrafos">
+  <div class="page-header">
+    <h2>🔀 II — Subgrafos e Grafo Parcial</h2>
+    <p>Como "recortar" partes de um grafo: subgrafos gerados por vértices, grafos parciais gerados por arestas, e subgrafos parciais.</p>
+  </div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Subgrafo</div>
+    <p>Sejam G = (V, A) e G' = (V', A') dois grafos. <strong>G' diz-se um subgrafo de G</strong> se <strong>V' for um subconjunto de V</strong> e <strong>A' um subconjunto de A</strong>.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px">
+    <div class="def-block">
+      <div class="def-title">Subgrafo Gerado por V' ⊂ V</div>
+      <p>Denota-se por <strong>G<sub>V'</sub> = (V', A')</strong> onde A' é a subfamília de arestas de G com <strong>ambas as extremidades em V'</strong>. Possui <em>menos vértices</em> e mantém todas as arestas de G que incidem sobre V'. É obtido por <strong>supressão de vértices</strong>.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Grafo Parcial Gerado por A' ⊂ A</div>
+      <p>O grafo <strong>G' = (V, A')</strong> cujo conjunto de vértices é o mesmo de G mas com <em>menos arestas</em>. Mantém <strong>todos os vértices</strong> e é obtido por <strong>supressão de arestas</strong>.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Subgrafo Parcial</div>
+      <p>Um <strong>subgrafo de um grafo parcial</strong> de G. Combina as duas operações anteriores: pode ter menos vértices <em>e</em> menos arestas.</p>
+    </div>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 8 — Os três conceitos num grafo G com vértices {1,2,3,4,5,6}</div>
+    <ul>
+      <li><strong>Subgrafo gerado por {2,3,4,5}</strong> — G<sub>{2,3,4,5}</sub>: mantém as arestas entre esses 4 vértices, descarta 1 e 6.</li>
+      <li><strong>Grafo parcial gerado por A' = {{2,3},{3,4},{4,5},{2,5}}</strong>: mantém os 6 vértices mas apenas essas 4 arestas.</li>
+      <li><strong>Subgrafo parcial</strong>: subconjunto do grafo parcial — ex: G com vértices {2,3,4,5} e arestas A'.</li>
+    </ul>
+    <div style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:180px;height:160px;margin:0 auto">
+          <svg viewBox="0 0 180 160" width="180" height="160">
+            <!-- G original: hexagon-like -->
+            <circle cx="90" cy="20" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="150" cy="60" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="150" cy="110" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="90" cy="145" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="30" cy="110" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="30" cy="60" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <!-- edges -->
+            <line x1="90" y1="32" x2="142" y2="53" stroke="#30363d" stroke-width="1.5"/>
+            <line x1="150" y1="72" x2="150" y2="98" stroke="#30363d" stroke-width="1.5"/>
+            <line x1="142" y1="118" x2="98" y2="136" stroke="#30363d" stroke-width="1.5"/>
+            <line x1="78" y1="136" x2="38" y2="118" stroke="#30363d" stroke-width="1.5"/>
+            <line x1="30" y1="98" x2="30" y2="72" stroke="#30363d" stroke-width="1.5"/>
+            <line x1="38" y1="53" x2="78" y2="32" stroke="#30363d" stroke-width="1.5"/>
+            <!-- diagonals -->
+            <line x1="102" y1="27" x2="144" y2="104" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <line x1="78" y1="27" x2="36" y2="104" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <line x1="90" y1="32" x2="90" y2="133" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <text x="90" y="24" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">1</text>
+            <text x="150" y="64" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">2</text>
+            <text x="150" y="114" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">3</text>
+            <text x="90" y="149" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">4</text>
+            <text x="30" y="114" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">5</text>
+            <text x="30" y="64" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">6</text>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Grafo G original</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BIPARTIDOS & COMPLETOS -->
+<section class="page" id="page-bipartidos">
+  <div class="page-header">
+    <h2>🔗 III — Grafos Bipartidos e Grafos Completos</h2>
+    <p>Quando todos os vértices estão ligados a todos os outros (completo), ou quando os vértices se dividem em dois grupos sem ligações internas (bipartido).</p>
+  </div>
+
+  <div class="section-title">Grafos Completos <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Grafo Completo</div>
+    <p>Grafo em que <strong>cada um dos vértices é adjacente a todos os outros</strong>, ou seja, entre cada par de vértices há exatamente uma aresta. Os grafos completos simples de ordem n designam-se por <strong>Kₙ</strong>. Um K<sub>n</sub> tem <strong>n(n−1)/2 arestas</strong>.</p>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 10 — Grafos Completos K₁ a K₆</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
+      <!-- K1 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:60px;height:60px">
+          <svg viewBox="0 0 60 60" width="60" height="60">
+            <circle cx="30" cy="30" r="12" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="30" y="34" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="IBM Plex Mono">v</text>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₁</div>
+      </div>
+      <!-- K2 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:80px;height:60px">
+          <svg viewBox="0 0 80 60" width="80" height="60">
+            <circle cx="15" cy="30" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="65" cy="30" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="25" y1="30" x2="55" y2="30" stroke="#58a6ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₂</div>
+      </div>
+      <!-- K3 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:80px;height:80px">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle cx="40" cy="10" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="10" cy="65" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="70" cy="65" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="32" y1="18" x2="17" y2="57" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="48" y1="18" x2="62" y2="57" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="20" y1="65" x2="60" y2="65" stroke="#58a6ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₃</div>
+      </div>
+      <!-- K4 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:90px;height:90px">
+          <svg viewBox="0 0 90 90" width="90" height="90">
+            <circle cx="45" cy="10" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="80" cy="45" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="45" cy="80" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="10" cy="45" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="55" y1="14" x2="72" y2="37" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="80" y1="55" x2="53" y2="72" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="37" y1="80" x2="18" y2="57" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="10" y1="35" x2="35" y2="16" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="20" y1="45" x2="70" y2="45" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="45" y1="20" x2="45" y2="70" stroke="#58a6ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₄</div>
+      </div>
+      <!-- K5 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:100px;height:100px">
+          <svg viewBox="0 0 100 100" width="100" height="100">
+            <circle cx="50" cy="8" r="9" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="90" cy="37" r="9" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="73" cy="85" r="9" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="27" cy="85" r="9" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="10" cy="37" r="9" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="59" y1="10" x2="82" y2="30" stroke="#58a6ff" stroke-width="1.2"/>
+            <line x1="88" y1="46" x2="79" y2="77" stroke="#58a6ff" stroke-width="1.2"/>
+            <line x1="65" y1="90" x2="35" y2="90" stroke="#58a6ff" stroke-width="1.2"/>
+            <line x1="19" y1="78" x2="13" y2="46" stroke="#58a6ff" stroke-width="1.2"/>
+            <line x1="18" y1="32" x2="41" y2="11" stroke="#58a6ff" stroke-width="1.2"/>
+            <line x1="59" y1="10" x2="68" y2="77" stroke="#58a6ff" stroke-width="1"/>
+            <line x1="59" y1="10" x2="19" y2="78" stroke="#58a6ff" stroke-width="1"/>
+            <line x1="82" y1="30" x2="35" y2="90" stroke="#58a6ff" stroke-width="1"/>
+            <line x1="82" y1="30" x2="18" y2="32" stroke="#58a6ff" stroke-width="1"/>
+            <line x1="79" y1="77" x2="18" y2="32" stroke="#58a6ff" stroke-width="1"/>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₅</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:28px">Grafos Bipartidos <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Grafo Bipartido</div>
+    <p>Um grafo simples G é <strong>bipartido</strong> se existe uma <strong>partição do conjunto de vértices em dois subconjuntos disjuntos U e V</strong>, de tal modo que <strong>todas as arestas de G tenham uma extremidade em U e outra em V</strong>. Denota-se por G = (U, V; A).</p>
+  </div>
+
+  <div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op nota">TÉCNICA</span> Como verificar se um grafo é bipartido</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.9">Usar a técnica de <strong style="color:var(--text)">coloração de vértices</strong>: atribuir cores a cada vértice de forma que vértices adjacentes tenham cores diferentes (usando o menor número de cores possível).</p>
+    <ul class="prop-list" style="margin-top:10px">
+      <li><span class="pill" style="background:rgba(63,185,80,.1);color:var(--green)">2 cores</span>Coloração com <strong>2 cores</strong> → o grafo <strong style="color:var(--green)">é bipartido</strong>.</li>
+      <li><span class="pill" style="background:rgba(248,81,73,.1);color:var(--red)">3+ cores</span>Coloração com <strong>3 ou mais cores</strong> → o grafo <strong style="color:var(--red)">não é bipartido</strong>.</li>
+    </ul>
+    <div class="nota-block" style="margin-top:10px">
+      <div class="nota-title">Teorema</div>
+      <p>Um grafo G é bipartido se e só se <strong>não tem circuitos de comprimento ímpar</strong>.</p>
+    </div>
+  </div>
+
+  <div class="def-block" style="margin-top:8px">
+    <div class="def-title">Definição — Grafo Bipartido Completo K<sub>m,n</sub></div>
+    <p>Um grafo simples G = (V,A) é <strong>bipartido completo K<sub>m,n</sub></strong> se K<sub>m,n</sub> = {V₁ ∪ V₂, A} e <strong>quaisquer vértices de V₁ e V₂ são adjacentes</strong> (todos os vértices de um lado ligados a todos do outro).</p>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 13 — K₁,₁ · K₃,₂ · K₃,₃</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;align-items:flex-end">
+      <!-- K1,1 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:80px;height:80px">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle cx="20" cy="40" r="10" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+            <circle cx="60" cy="40" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="30" y1="40" x2="50" y2="40" stroke="#7d8590" stroke-width="1.5"/>
+            <text x="20" y="44" text-anchor="middle" fill="#3fb950" font-size="9" font-family="IBM Plex Mono">x₁</text>
+            <text x="60" y="44" text-anchor="middle" fill="#58a6ff" font-size="9" font-family="IBM Plex Mono">y₁</text>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₁,₁</div>
+      </div>
+      <!-- K3,2 -->
+      <div style="text-align:center">
+        <div class="graph-canvas" style="width:100px;height:110px">
+          <svg viewBox="0 0 100 110" width="100" height="110">
+            <circle cx="25" cy="20" r="10" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+            <circle cx="25" cy="55" r="10" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+            <circle cx="25" cy="90" r="10" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+            <circle cx="75" cy="37" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <circle cx="75" cy="73" r="10" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+            <line x1="35" y1="22" x2="65" y2="36" stroke="#30363d" stroke-width="1.2"/>
+            <line x1="35" y1="22" x2="65" y2="70" stroke="#30363d" stroke-width="1.2"/>
+            <line x1="35" y1="55" x2="65" y2="36" stroke="#30363d" stroke-width="1.2"/>
+            <line x1="35" y1="55" x2="65" y2="70" stroke="#30363d" stroke-width="1.2"/>
+            <line x1="35" y1="88" x2="65" y2="36" stroke="#30363d" stroke-width="1.2"/>
+            <line x1="35" y1="88" x2="65" y2="70" stroke="#30363d" stroke-width="1.2"/>
+            <text x="25" y="24" text-anchor="middle" fill="#3fb950" font-size="9" font-family="IBM Plex Mono">x₁</text>
+            <text x="25" y="59" text-anchor="middle" fill="#3fb950" font-size="9" font-family="IBM Plex Mono">x₂</text>
+            <text x="25" y="94" text-anchor="middle" fill="#3fb950" font-size="9" font-family="IBM Plex Mono">x₃</text>
+            <text x="75" y="41" text-anchor="middle" fill="#58a6ff" font-size="9" font-family="IBM Plex Mono">y₁</text>
+            <text x="75" y="77" text-anchor="middle" fill="#58a6ff" font-size="9" font-family="IBM Plex Mono">y₂</text>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:var(--acc);margin-top:4px;font-family:'IBM Plex Mono',monospace">K₃,₂</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CADEIAS & CAMINHOS -->
+<section class="page" id="page-cadeias">
+  <div class="page-header">
+    <h2>⛓️ IV — Cadeias e Caminhos de um Grafo</h2>
+    <p>Formas de percorrer um grafo: cadeias, caminhos, ciclos, circuitos e as suas variantes.</p>
+  </div>
+
+  <div class="section-title">Cadeias <span></span></div>
+
+  <ul class="prop-list" style="margin-bottom:16px">
+    <li><span class="pill">Cadeia</span>Sequência qualquer de <strong>arestas adjacentes</strong> que ligam dois vértices.</li>
+    <li><span class="pill">Fechada</span><strong>Cadeia fechada</strong> — cadeia cujas extremidades finais e iniciais coincidem.</li>
+    <li><span class="pill">Simples</span><strong>Cadeia simples</strong> — cadeia que não passa duas vezes pela mesma <strong>aresta</strong>.</li>
+    <li><span class="pill">Elementar</span><strong>Cadeia elementar</strong> — cadeia que não passa duas vezes pelo mesmo <strong>vértice</strong>.</li>
+    <li><span class="pill">Ciclo</span><strong>Ciclo</strong> — cadeia simples fechada.</li>
+    <li><span class="pill">Comprimento</span>O <strong>comprimento</strong> de uma cadeia é o número de arestas (ou arcos) que a compõe.</li>
+  </ul>
+
+  <div class="nota-block">
+    <div class="nota-title">Nota</div>
+    <p>O conceito de cadeia é válido tanto para grafos não orientados como para grafos orientados, bastando, nestes, <strong>ignorar o sentido da orientação dos arcos</strong>.</p>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">Caminhos <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Caminho de um Grafo</div>
+    <p>Um <strong>caminho</strong> é uma sequência de vértices ⟨v₁, v₂, …, vₙ⟩ onde dois vértices sucessivos definem uma aresta. O primeiro vértice é a <strong>origem (vértice inicial)</strong> e o último é o <strong>destino (vértice final)</strong>. O <strong>comprimento</strong> é o número de arestas que o definem.</p>
+  </div>
+
+  <ul class="prop-list" style="margin-bottom:16px">
+    <li><span class="pill">Simples</span><strong>Caminho simples</strong> — não passa duas vezes pela mesma <strong>aresta</strong>.</li>
+    <li><span class="pill">Elementar</span><strong>Caminho elementar</strong> — não passa duas vezes pelo mesmo <strong>vértice</strong>.</li>
+    <li><span class="pill">Fechado</span><strong>Caminho fechado</strong> — a extremidade inicial coincide com a extremidade final.</li>
+    <li><span class="pill">Circuito</span><strong>Circuito</strong> — caminho <em>simples</em> que se inicia e termina no mesmo vértice. Todos os arcos apontam na mesma direção.</li>
+    <li><span class="pill">Trivial</span><strong>Caminho trivial</strong> — por convenção, a sequência ⟨a⟩ onde a ∈ V.</li>
+  </ul>
+
+  <div class="nota-block">
+    <div class="nota-title">Diferença entre Cadeia e Caminho</div>
+    <p>Ambas as definições <strong>só são diferentes em dígrafos</strong>. Num caminho, todos os arcos apontam na mesma direção (de um vértice para o seu sucessor). Numa cadeia pode-se ignorar a orientação.</p>
+  </div>
+
+  <div class="ex-block">
+    <div class="ex-title">✏️ Exemplo 17 — Tipos de caminhos num dígrafo</div>
+    <ul>
+      <li><strong>Comprimento 6:</strong> μ = ⟨1, 2, 3, 5, 4, 3, 5⟩ — passa pelo vértice 3 duas vezes</li>
+      <li><strong>Simples:</strong> μ = ⟨1, 2, 3, 5, 6, 3⟩ — não repete arestas mas repete vértices</li>
+      <li><strong>Elementar:</strong> μ = ⟨1, 2, 3, 5, 6⟩ — não repete vértices nem arestas</li>
+      <li><strong>Fechado:</strong> μ = ⟨1, 2, 3, 5, 4, 1⟩ — começa e termina em 1</li>
+      <li><strong>Circuito:</strong> μ = ⟨1, 2, 3, 5, 4, 1⟩ — caminho simples fechado</li>
+    </ul>
+  </div>
+</section>
+
+<!-- CAMINHOS EULERIANOS -->
+<section class="page" id="page-euler">
+  <div class="page-header">
+    <h2>🌐 V — Caminhos Eulerianos</h2>
+    <p>O famoso problema das Sete Pontes de Königsberg que deu origem à teoria de grafos, e os Teoremas de Euler que permitem determinar a existência de caminhos e circuitos eulerianos.</p>
+  </div>
+
+  <div class="section-title">Problema das 7 Pontes de Königsberg (1736) <span></span></div>
+
+  <div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op nota">HISTÓRIA</span> Leonhard Euler · 1736</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:12px">Na cidade de Königsberg (atualmente no território da Rússia), existem sete pontes sobre o rio Pregel. Euler colocou a questão:</p>
+    <div style="background:rgba(227,179,65,.05);border:1px solid rgba(227,179,65,.2);border-radius:8px;padding:14px 18px;margin-bottom:12px">
+      <p style="font-size:14px;color:var(--gold);font-style:italic;line-height:1.8">«Será possível fazer uma visita a toda a cidade e regressar ao ponto de partida, atravessando cada ponte uma única vez?»</p>
+    </div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.9">Euler representou as zonas terrestres como <strong style="color:var(--text)">vértices</strong> e as pontes como <strong style="color:var(--text)">arestas</strong>. O problema equivale a: <strong style="color:var(--text)">é possível desenhar o grafo sem levantar o lápis e sem passar duas vezes pela mesma aresta?</strong></p>
+    <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-top:10px">Como todos os vértices têm grau ímpar, Euler demonstrou que a solução <strong style="color:var(--red)">não existe</strong>.</p>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">Definições <span></span></div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px">
+    <div class="def-block">
+      <div class="def-title">Caminho Euleriano</div>
+      <p>Um <strong>caminho simples contendo todas as arestas</strong> de G (passa uma única vez em cada aresta). Um caminho euleriano contém necessariamente <strong>todos os vértices</strong> de G.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Circuito Euleriano</div>
+      <p>Um <strong>caminho euleriano fechado</strong> — o primeiro e o último vértice coincidem.</p>
+    </div>
+    <div class="def-block">
+      <div class="def-title">Grafo Euleriano</div>
+      <p>Um grafo conexo que possui um <strong>circuito euleriano</strong>.</p>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:4px">Teoremas de Euler <span></span></div>
+
+  <div class="thm-block">
+    <div class="thm-title">Teorema de Euler (1) — Caminho Euleriano</div>
+    <p>Um grafo G, conexo, tem um <strong>caminho euleriano</strong> se e só se o número de vértices de G de <strong>grau ímpar é exatamente dois</strong>. O caminho começa num desses vértices e termina no outro.</p>
+  </div>
+
+  <div class="thm-block">
+    <div class="thm-title">Teorema de Euler (2) — Circuito Euleriano</div>
+    <p>Um grafo G, conexo, tem um <strong>circuito euleriano</strong> se e só se <strong>todos os seus vértices têm grau par</strong>.</p>
+  </div>
+
+  <div class="def-block" style="background:rgba(63,185,80,.04);border-color:rgba(63,185,80,.2);border-left-color:var(--green)">
+    <div class="def-title" style="color:var(--green)">Corolário — Resumo</div>
+    <p>Um grafo G conexo possui um <strong>caminho euleriano</strong> (que pode ser fechado ou não) se e só se tem <strong>exatamente 0 ou 2 vértices de grau ímpar</strong>. Se tiver 0, o caminho é um circuito; se tiver 2, começa e termina nos vértices ímpares.</p>
+  </div>
+
+  <div class="ex-block" style="margin-top:16px">
+    <div class="ex-title">✏️ Exemplo 19 — Grafo com circuito euleriano</div>
+    <p>Grafo com vértices {a, b, c, d, e, f} onde todos os vértices têm grau par:</p>
+    <ul style="margin-top:8px">
+      <li>1.º Verificar que o grafo é <strong>conexo</strong> ✔</li>
+      <li>2.º Verificar graus — todos <strong>pares</strong> ✔</li>
+      <li>3.º Pelo Teorema 2: <strong style="color:var(--green)">admite circuito euleriano</strong></li>
+      <li>Exemplo: ⟨a, f, b, c, e, d, a, b, d, c, a⟩</li>
+    </ul>
+  </div>
+
+  <div class="ex-block" style="margin-top:12px">
+    <div class="ex-title">✏️ Exemplo 20 — Grafo com caminho mas sem circuito</div>
+    <p>Grafo com vértices {a, b, c, d, e} com graus:</p>
+    <table class="deg-table" style="max-width:320px;margin:10px 0">
+      <tr><th>Vértice</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th></tr>
+      <tr><td style="color:var(--muted);font-family:'IBM Plex Mono',monospace">Grau</td><td class="deg-odd">3</td><td class="deg-odd">3</td><td class="deg-even">4</td><td class="deg-even">4</td><td class="deg-even">2</td></tr>
+    </table>
+    <ul>
+      <li><strong>Circuito euleriano:</strong> <span style="color:var(--red)">Não</span> — vértices a e b têm grau ímpar</li>
+      <li><strong>Caminho euleriano:</strong> <span style="color:var(--green)">Sim</span> — exactamente 2 vértices de grau ímpar</li>
+      <li>O caminho começa em <em>a</em> (ou <em>b</em>) e termina no outro. Ex: ⟨a, b, c, e, d, a, c, d, b⟩</li>
+    </ul>
+  </div>
+
+  <div class="section-title" style="margin-top:28px">Eulerização de Grafos <span></span></div>
+
+  <div class="def-block">
+    <div class="def-title">Definição — Eulerizar um Grafo</div>
+    <p><strong>Eulerizar</strong> um grafo consiste em <strong>acrescentar-lhe arestas</strong>, por forma a tornar possível encontrar um circuito euleriano. A <strong>melhor eulerização</strong> acrescenta o <strong>menor número de arestas</strong> possível.</p>
+  </div>
+
+  <div class="mat-step-block">
+    <div class="msb-label"><span class="msb-op nota">REGRAS</span> Como Eulerizar</div>
+    <ul class="prop-list">
+      <li><span class="pill">1.º</span>Verificar o <strong>grau de cada vértice</strong> para localizar os que têm grau ímpar.</li>
+      <li><span class="pill">2.º</span>Adicionar arestas com o objetivo de que <strong>todos os vértices fiquem com grau par</strong>. Só se pode <strong>duplicar uma aresta já existente</strong> entre dois vértices.</li>
+      <li><span class="pill">3.º</span>A <strong>melhor eulerização</strong> é sempre aquela que acrescenta o <strong>menor número de arestas</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="section-title" style="margin-top:28px">Tabela de Decisão <span></span></div>
+  <table class="deg-table" style="max-width:600px">
+    <tr><th>Vértices de grau ímpar</th><th>Circuito Euleriano</th><th>Caminho Euleriano</th><th>Conclusão</th></tr>
+    <tr>
+      <td style="color:var(--green)">0 (nenhum)</td>
+      <td style="color:var(--green)">✅ Sim</td>
+      <td style="color:var(--green)">✅ Sim (é o circuito)</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Sans',monospace;font-size:11px">Grafo Euleriano</td>
+    </tr>
+    <tr>
+      <td style="color:var(--gold)">2 exatamente</td>
+      <td style="color:var(--red)">❌ Não</td>
+      <td style="color:var(--green)">✅ Sim</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Sans',monospace;font-size:11px">Começa/termina nos ímpares</td>
+    </tr>
+    <tr>
+      <td style="color:var(--red)">4 ou mais</td>
+      <td style="color:var(--red)">❌ Não</td>
+      <td style="color:var(--red)">❌ Não</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Sans',monospace;font-size:11px">Eulerizar o grafo</td>
+    </tr>
+  </table>
+</section>
+
+<!-- EXPLORADOR INTERATIVO -->
+<section class="page" id="page-explorador">
+  <div class="page-header">
+    <h2>🧪 Explorador de Grafo</h2>
+    <p>Cria o teu próprio grafo, adiciona vértices e arestas, e verifica automaticamente graus e propriedades eulerianas.</p>
+  </div>
+
+  <div class="graph-interactive">
+    <div class="graph-controls">
+      <button class="btn-ctrl" id="btnAddV" onclick="addVertex()">➕ Adicionar Vértice</button>
+      <button class="btn-ctrl" id="btnAddE" onclick="toggleEdgeMode()" id="edgeModeBtn">🔗 Adicionar Aresta</button>
+      <button class="btn-ctrl danger" onclick="clearGraph()">🗑️ Limpar</button>
+      <button class="btn-ctrl" onclick="loadExample('k4')">K₄</button>
+      <button class="btn-ctrl" onclick="loadExample('k33')">K₃,₃</button>
+      <button class="btn-ctrl" onclick="loadExample('euler')">Euleriano</button>
+      <button class="btn-ctrl" onclick="loadExample('path')">Caminho Euler</button>
+      <button class="btn-ctrl" onclick="loadExample('konigsberg')">Königsberg</button>
+    </div>
+    <div id="edgeModeInfo" style="display:none;background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.2);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--gold);margin-bottom:10px">
+      ⚡ Modo aresta ativo — clica em dois vértices para os ligar. Clica novamente em "Adicionar Aresta" para cancelar.
+    </div>
+    <canvas id="graphCanvas" width="700" height="380" style="width:100%;height:380px;border-radius:8px;cursor:crosshair;background:#1c2128;display:block"></canvas>
+
+    <div id="graphInfo" class="info-box" style="margin-top:12px">
+      <p style="color:var(--muted);font-size:12px">Adiciona vértices e arestas para ver as propriedades do grafo.</p>
+    </div>
+
+    <div id="eulerResult" class="euler-result" style="display:none">
+      <div class="er-title">Análise Euleriana</div>
+      <div id="eulerBadges"></div>
+      <div id="eulerExplain" style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+    </div>
+
+    <div id="degTableDiv" style="display:none;margin-top:12px">
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Tabela de Graus</div>
+      <div style="overflow-x:auto"><table class="deg-table" id="degTable"></table></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ── PAGE NAVIGATION ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.drawer-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  document.querySelectorAll('.nav-item, .drawer-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  document.querySelector('.main').scrollTo(0, 0);
+}
+
+// ── MOBILE DRAWER ──
+function toggleDrawer() {
+  const drawer = document.getElementById('mobileDrawer');
+  const btn = document.getElementById('hamburgerBtn');
+  drawer.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+function closeDrawer() {
+  document.getElementById('mobileDrawer').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+// INTERACTIVE GRAPH EXPLORER
+// ══════════════════════════════════════════
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+
+let vertices = [];
+let edges = [];
+let edgeMode = false;
+let edgeFirst = null;
+let dragVertex = null;
+let dragOffX = 0, dragOffY = 0;
+
+const COLORS = {
+  vertexFill: 'rgba(88,166,255,0.15)',
+  vertexStroke: '#58a6ff',
+  vertexText: '#e6edf3',
+  edgeColor: '#30363d',
+  selectedFill: 'rgba(63,185,80,0.2)',
+  selectedStroke: '#3fb950',
+  oddFill: 'rgba(227,179,65,0.15)',
+  oddStroke: '#e3b341',
+};
+
+function getCanvasXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function getVertex(x, y) {
+  return vertices.find(v => Math.hypot(v.x - x, v.y - y) < 22);
+}
+
+function addVertex() {
+  edgeMode = false;
+  updateEdgeMode();
+  const label = String.fromCharCode(65 + vertices.length % 26) + (vertices.length >= 26 ? Math.floor(vertices.length/26) : '');
+  const angle = (vertices.length / 8) * Math.PI * 2;
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const r = Math.min(120 + vertices.length * 10, 160);
+  const x = cx + r * Math.cos(angle);
+  const y = cy + r * Math.sin(angle);
+  vertices.push({ id: vertices.length, x, y, label });
+  draw();
+  analyze();
+}
+
+function toggleEdgeMode() {
+  edgeMode = !edgeMode;
+  edgeFirst = null;
+  updateEdgeMode();
+}
+
+function updateEdgeMode() {
+  const btn = document.getElementById('edgeModeBtn');
+  const info = document.getElementById('edgeModeInfo');
+  if (edgeMode) {
+    btn.classList.add('active');
+    info.style.display = 'block';
+  } else {
+    btn.classList.remove('active');
+    info.style.display = 'none';
+    edgeFirst = null;
+  }
+  draw();
+}
+
+function clearGraph() {
+  vertices = [];
+  edges = [];
+  edgeMode = false;
+  edgeFirst = null;
+  updateEdgeMode();
+  draw();
+  document.getElementById('graphInfo').innerHTML = '<p style="color:var(--muted);font-size:12px">Adiciona vértices e arestas para ver as propriedades do grafo.</p>';
+  document.getElementById('eulerResult').style.display = 'none';
+  document.getElementById('degTableDiv').style.display = 'none';
+}
+
+function getDegrees() {
+  const deg = {};
+  vertices.forEach(v => deg[v.id] = 0);
+  edges.forEach(e => { deg[e.a] += 1; deg[e.b] += 1; });
+  return deg;
+}
+
+function isConnected() {
+  if (vertices.length === 0) return true;
+  const visited = new Set();
+  const queue = [vertices[0].id];
+  visited.add(vertices[0].id);
+  while (queue.length) {
+    const cur = queue.shift();
+    edges.forEach(e => {
+      if (e.a === cur && !visited.has(e.b)) { visited.add(e.b); queue.push(e.b); }
+      if (e.b === cur && !visited.has(e.a)) { visited.add(e.a); queue.push(e.a); }
+    });
+  }
+  return visited.size === vertices.length;
+}
+
+function analyze() {
+  if (vertices.length === 0) return;
+  const deg = getDegrees();
+  const connected = isConnected();
+  const oddVerts = vertices.filter(v => deg[v.id] % 2 !== 0);
+  const nOdd = oddVerts.length;
+
+  // Info box
+  let info = `<strong>Vértices:</strong> <span class="val">${vertices.length}</span> &nbsp;|&nbsp; `;
+  info += `<strong>Arestas:</strong> <span class="val">${edges.length}</span> &nbsp;|&nbsp; `;
+  info += `<strong>Conexo:</strong> <span class="val ${connected?'good':''}">${connected ? 'Sim ✔' : 'Não ✗'}</span> &nbsp;|&nbsp; `;
+  info += `<strong>Vért. grau ímpar:</strong> <span class="val ${nOdd===0?'good':nOdd===2?'warn':''}">${nOdd}</span>`;
+  document.getElementById('graphInfo').innerHTML = info;
+
+  // Degree table
+  if (vertices.length > 0) {
+    let th = '<tr><th>Vértice</th>' + vertices.map(v => `<th>${v.label}</th>`).join('') + '</tr>';
+    let td = '<tr><td style="color:var(--muted);font-family:\'IBM Plex Mono\',monospace">Grau</td>' +
+      vertices.map(v => `<td class="${deg[v.id]%2===0?'deg-even':'deg-odd'}">${deg[v.id]}</td>`).join('') + '</tr>';
+    document.getElementById('degTable').innerHTML = th + td;
+    document.getElementById('degTableDiv').style.display = 'block';
+  }
+
+  // Euler result
+  if (connected && vertices.length > 1) {
+    document.getElementById('eulerResult').style.display = 'block';
+    let badges = '';
+    let explain = '';
+    if (nOdd === 0) {
+      badges += '<span class="euler-badge yes">✅ Circuito Euleriano</span>';
+      badges += '<span class="euler-badge yes">✅ Caminho Euleriano</span>';
+      explain = 'Todos os vértices têm grau par → pelo Teorema de Euler (2), existe um <strong style="color:var(--green)">circuito euleriano</strong>. O grafo é euleriano.';
+    } else if (nOdd === 2) {
+      badges += '<span class="euler-badge no">❌ Circuito Euleriano</span>';
+      badges += '<span class="euler-badge yes">✅ Caminho Euleriano</span>';
+      explain = `Exatamente 2 vértices de grau ímpar (${oddVerts.map(v=>v.label).join(', ')}) → pelo Teorema de Euler (1), existe um <strong style="color:var(--gold)">caminho euleriano</strong> que começa em ${oddVerts[0].label} e termina em ${oddVerts[1].label}.`;
+    } else {
+      badges += '<span class="euler-badge no">❌ Circuito Euleriano</span>';
+      badges += '<span class="euler-badge no">❌ Caminho Euleriano</span>';
+      const needed = nOdd / 2;
+      explain = `${nOdd} vértices de grau ímpar (${oddVerts.map(v=>v.label).join(', ')}) → não existe caminho nem circuito euleriano. Para eulerizar, adicionar ${needed} aresta${needed>1?'s':''} a ligar pares de vértices ímpares.`;
+    }
+    document.getElementById('eulerBadges').innerHTML = badges;
+    document.getElementById('eulerExplain').innerHTML = explain;
+  } else if (!connected) {
+    document.getElementById('eulerResult').style.display = 'block';
+    document.getElementById('eulerBadges').innerHTML = '<span class="euler-badge no">❌ Grafo não conexo</span>';
+    document.getElementById('eulerExplain').innerHTML = 'Os Teoremas de Euler requerem que o grafo seja <strong>conexo</strong>.';
+  } else {
+    document.getElementById('eulerResult').style.display = 'none';
+  }
+
+  draw();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const deg = getDegrees();
+
+  // Draw edges
+  edges.forEach(e => {
+    const va = vertices.find(v => v.id === e.a);
+    const vb = vertices.find(v => v.id === e.b);
+    if (!va || !vb) return;
+    ctx.beginPath();
+    ctx.moveTo(va.x, va.y);
+    ctx.lineTo(vb.x, vb.y);
+    ctx.strokeStyle = '#3d444d';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  // Draw vertices
+  vertices.forEach(v => {
+    const isOdd = deg[v.id] % 2 !== 0;
+    const isSel = edgeFirst && edgeFirst.id === v.id;
+
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = isSel ? 'rgba(63,185,80,0.3)' : isOdd ? 'rgba(227,179,65,0.2)' : 'rgba(88,166,255,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = isSel ? '#3fb950' : isOdd ? '#e3b341' : '#58a6ff';
+    ctx.lineWidth = isSel ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = 'bold 13px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v.label, v.x, v.y);
+
+    // Degree
+    ctx.fillStyle = isOdd ? '#e3b341' : '#3fb950';
+    ctx.font = '10px IBM Plex Mono';
+    ctx.fillText(deg[v.id], v.x + 14, v.y - 14);
+  });
+}
+
+// Mouse events
+canvas.addEventListener('mousedown', e => {
+  const {x, y} = getCanvasXY(e);
+  const v = getVertex(x, y);
+  if (edgeMode) {
+    if (v) {
+      if (!edgeFirst) { edgeFirst = v; draw(); }
+      else if (edgeFirst.id !== v.id) {
+        const exists = edges.some(e => (e.a===edgeFirst.id&&e.b===v.id)||(e.a===v.id&&e.b===edgeFirst.id));
+        if (!exists) edges.push({a: edgeFirst.id, b: v.id});
+        edgeFirst = null;
+        analyze();
+      }
+    }
+  } else {
+    if (v) { dragVertex = v; dragOffX = v.x - x; dragOffY = v.y - y; }
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (dragVertex) {
+    const {x, y} = getCanvasXY(e);
+    dragVertex.x = x + dragOffX;
+    dragVertex.y = y + dragOffY;
+    draw();
+  }
+});
+
+canvas.addEventListener('mouseup', () => { dragVertex = null; });
+
+canvas.addEventListener('dblclick', e => {
+  if (edgeMode) return;
+  const {x, y} = getCanvasXY(e);
+  const v = getVertex(x, y);
+  if (v) {
+    edges = edges.filter(e => e.a !== v.id && e.b !== v.id);
+    vertices = vertices.filter(vv => vv.id !== v.id);
+    analyze();
+  }
+});
+
+// Touch support
+canvas.addEventListener('touchstart', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove', {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
+canvas.addEventListener('touchend', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); });
+
+function loadExample(name) {
+  clearGraph();
+  if (name === 'k4') {
+    const cx = 350, cy = 190, r = 120;
+    for (let i = 0; i < 4; i++) {
+      const a = (i/4)*Math.PI*2 - Math.PI/2;
+      vertices.push({id:i, x:cx+r*Math.cos(a), y:cy+r*Math.sin(a), label:String.fromCharCode(65+i)});
+    }
+    for (let i=0;i<4;i++) for(let j=i+1;j<4;j++) edges.push({a:i,b:j});
+  } else if (name === 'k33') {
+    // K3,3 bipartite
+    const lx=180, rx=520, ys=[100,190,280];
+    for(let i=0;i<3;i++) vertices.push({id:i,x:lx,y:ys[i],label:['A','B','C'][i]});
+    for(let i=0;i<3;i++) vertices.push({id:3+i,x:rx,y:ys[i],label:['D','E','F'][i]});
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++) edges.push({a:i,b:3+j});
+  } else if (name === 'euler') {
+    // Eulerian circuit: all even degrees
+    const pts = [{x:200,y:100},{x:500,y:100},{x:600,y:240},{x:500,y:380},{x:200,y:380},{x:100,y:240},{x:350,y:240}];
+    pts.forEach((p,i) => vertices.push({id:i,x:p.x,y:p.y,label:String.fromCharCode(65+i)}));
+    [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[1,6],[2,6],[3,6],[4,6],[5,6]].forEach(([a,b]) => edges.push({a,b}));
+  } else if (name === 'path') {
+    // Exactly 2 odd vertices → Eulerian path
+    const pts = [{x:150,y:190},{x:300,y:80},{x:450,y:190},{x:550,y:300},{x:350,y:320},{x:200,y:310}];
+    pts.forEach((p,i) => vertices.push({id:i,x:p.x,y:p.y,label:String.fromCharCode(65+i)}));
+    [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,2],[1,4]].forEach(([a,b]) => edges.push({a,b}));
+  } else if (name === 'konigsberg') {
+    // Königsberg bridges: 4 vertices
+    vertices = [
+      {id:0,x:350,y:80,label:'N'},
+      {id:1,x:180,y:200,label:'O'},
+      {id:2,x:350,y:200,label:'I'},
+      {id:3,x:350,y:320,label:'S'},
+    ];
+    // 7 bridges: N-O, N-I, N-I, O-I, O-S, I-S, I-S
+    // We represent with parallel edges by storing them normally (multi-edges)
+    edges = [
+      {a:0,b:1},{a:0,b:2},{a:0,b:2},{a:1,b:2},{a:1,b:3},{a:2,b:3},{a:2,b:3}
+    ];
+  }
+  analyze();
+}
+
+// Initial draw
+draw();
+</script>
+</body>
+</html>

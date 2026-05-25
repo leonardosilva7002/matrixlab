@@ -91,6 +91,7 @@ body{
 
 /* MAIN */
 .main{flex:1;padding:36px 40px 80px;min-width:0;overflow-y:auto;max-height:100vh}
+@media(max-width:768px){.main{flex:none}}
 .page{display:none;animation:fadeIn .2s ease}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -226,6 +227,7 @@ body{
   background:var(--s2);border:1px solid var(--border);border-radius:12px;
   padding:16px;position:relative;
 }
+#graphCanvas{height:380px}
 .graph-controls{
   display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;
 }
@@ -287,34 +289,58 @@ body{
 .deg-even{color:var(--green)}
 .deg-odd{color:var(--gold)}
 
-/* MOBILE */
-@media(max-width:768px){
-  .sidebar{display:none}
-  .main{padding:16px 12px 80px;max-height:unset}
-  .mobile-topbar{
-    display:flex;align-items:center;justify-content:space-between;
-    position:sticky;top:0;z-index:200;
-    height:54px;background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;
-  }
-  .graph-interactive{padding:12px 10px}
-  .graph-controls{gap:6px}
-  .btn-ctrl{font-size:11px;padding:6px 10px}
-  #graphCanvas{height:280px !important}
-  .home-grid{grid-template-columns:1fr 1fr}
-  .page-header h2{font-size:1.2rem}
-  .home-grid .home-card h3{font-size:.8rem}
-  h2[style*="2.6rem"]{font-size:1.8rem !important}
-  .def-block, .thm-block, .nota-block, .ex-block{padding:10px 12px}
-  .mat-step-block{padding:14px 12px}
-  .section-title{font-size:1rem}
-  .deg-table{font-size:11px}
-  .deg-table th, .deg-table td{padding:5px 8px}
-  .euler-badge{font-size:12px;padding:6px 12px}
-  .prop-list li{font-size:12px;padding:7px 10px}
-}
+.mobile-topbar{display:none}
+.mobile-drawer{display:none}
+
 @media(min-width:769px){
-  .mobile-topbar{display:none}
   .mobile-drawer{display:none!important}
+}
+
+@media(max-width:768px){
+  html,body{overflow-x:hidden}
+  .app{display:block;min-height:100vh}
+  .sidebar{display:none}
+
+  .mobile-topbar{
+    display:flex !important;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:200;
+    height:54px;background:var(--s1);
+    border-bottom:1px solid var(--border);
+    padding:0 16px;width:100%;
+  }
+
+  .main{
+    display:block;
+    padding:16px 14px 80px;
+    max-height:none !important;
+    overflow-y:visible;
+    width:100%;
+    min-width:0;
+  }
+
+  .page-header h2{font-size:1.15rem}
+  .page-header p{font-size:12px}
+  .section-title{font-size:1rem}
+  .hero-title{font-size:1.8rem !important;line-height:1.1 !important}
+
+  .home-grid{grid-template-columns:1fr 1fr !important;gap:10px}
+  .home-card{padding:14px}
+  .home-card h3{font-size:.82rem}
+  .home-card p{font-size:11px}
+
+  .def-block,.thm-block,.nota-block{padding:10px 12px;margin-bottom:10px}
+  .ex-block{padding:12px;margin-bottom:10px}
+  .mat-step-block{padding:12px}
+  .prop-list li{font-size:12px;padding:6px 10px;gap:8px}
+
+  .graph-interactive{padding:10px 8px}
+  .graph-controls{gap:5px;margin-bottom:10px;flex-wrap:wrap}
+  .btn-ctrl{font-size:11px;padding:6px 9px}
+  #graphCanvas{height:260px !important}
+
+  .deg-table{font-size:11px}
+  .deg-table th,.deg-table td{padding:5px 7px}
+  .euler-badge{font-size:11px;padding:5px 10px;margin-right:5px;margin-bottom:6px}
 }
 .mobile-topbar-logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--text)}
 .hamburger-btn{
@@ -433,7 +459,7 @@ body{
 <section class="page active" id="page-home">
   <div style="margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border)">
     <div style="display:inline-block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--green);background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);padding:3px 10px;border-radius:2px;margin-bottom:16px">Graph Lab · Matemática Discreta</div>
-    <h2 style="font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:800;line-height:1.05;margin-bottom:14px">
+    <h2 class="hero-title" style="font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:800;line-height:1.05;margin-bottom:14px">
       Teoria de<br>
       <span style="background:linear-gradient(135deg,var(--green),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Grafos</span>
     </h2>
@@ -1049,7 +1075,7 @@ body{
       ⚡ Modo aresta ativo — clica em dois vértices para os ligar. Clica novamente em "Adicionar Aresta" para cancelar.
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">💡 Clica/toca no canvas para adicionar vértice. Duplo-clique para remover.</div>
-    <canvas id="graphCanvas" width="700" height="380" style="width:100%;height:380px;border-radius:8px;cursor:crosshair;background:#1c2128;display:block"></canvas>
+    <canvas id="graphCanvas" width="700" height="380" style="width:100%;border-radius:8px;cursor:crosshair;background:#1c2128;display:block"></canvas>
 
     <div id="graphInfo" class="info-box" style="margin-top:12px">
       <p style="color:var(--muted);font-size:12px">Adiciona vértices e arestas para ver as propriedades do grafo.</p>

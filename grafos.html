@@ -1114,15 +1114,17 @@ function showPage(id) {
 
 // ── CANVAS RESIZE ──
 function resizeCanvas() {
+  // Match canvas internal resolution to its actual CSS display size
+  const rect = canvas.getBoundingClientRect();
+  const displayW = rect.width || canvas.parentElement.clientWidth || 700;
   const isMobile = window.innerWidth <= 768;
-  const h = isMobile ? 280 : 380;
-  canvas.height = h;
-  canvas.style.height = h + 'px';
+  const displayH = isMobile ? 260 : 380;
+  canvas.width = Math.floor(displayW);
+  canvas.height = displayH;
+  canvas.style.height = displayH + 'px';
   draw();
 }
-window.addEventListener('resize', () => {
-  resizeCanvas();
-});
+window.addEventListener('resize', () => { resizeCanvas(); });
 
 // ── MOBILE DRAWER ──
 function toggleDrawer() {
@@ -1300,17 +1302,63 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const deg = getDegrees();
 
-  // Draw edges
-  edges.forEach(e => {
+  // Draw edges (curved multi-edges supported)
+  // Group edges by pair to offset parallel ones
+  const edgePairs = {};
+  edges.forEach((e, idx) => {
+    const key = [Math.min(e.a,e.b), Math.max(e.a,e.b)].join('-');
+    if (!edgePairs[key]) edgePairs[key] = [];
+    edgePairs[key].push(idx);
+  });
+  edges.forEach((e, idx) => {
     const va = vertices.find(v => v.id === e.a);
     const vb = vertices.find(v => v.id === e.b);
     if (!va || !vb) return;
+    const key = [Math.min(e.a,e.b), Math.max(e.a,e.b)].join('-');
+    const group = edgePairs[key];
+    const count = group.length;
+    const pos = group.indexOf(idx); // 0-based position in group
     ctx.beginPath();
-    ctx.moveTo(va.x, va.y);
-    ctx.lineTo(vb.x, vb.y);
     ctx.strokeStyle = '#3d444d';
     ctx.lineWidth = 2;
+    if (count === 1) {
+      // Single edge: straight line
+      ctx.moveTo(va.x, va.y);
+      ctx.lineTo(vb.x, vb.y);
+    } else {
+      // Multiple edges: curve each one differently
+      // offset alternates: 0→straight(or slight), 1→curve right, 2→curve left...
+      const dx = vb.x - va.x, dy = vb.y - va.y;
+      const mx = (va.x + vb.x) / 2, my = (va.y + vb.y) / 2;
+      const nx = -dy, ny = dx; // perpendicular
+      const len = Math.sqrt(nx*nx + ny*ny) || 1;
+      // spread factor: even index curves one way, odd the other
+      const spread = 40;
+      const sign = (pos % 2 === 0) ? 1 : -1;
+      const magnitude = Math.ceil((pos + 1) / 2) * spread * sign;
+      const cpx = mx + (nx / len) * magnitude;
+      const cpy = my + (ny / len) * magnitude;
+      ctx.moveTo(va.x, va.y);
+      ctx.quadraticCurveTo(cpx, cpy, vb.x, vb.y);
+    }
     ctx.stroke();
+
+    // Draw edge label (aresta nº) for multi-edges
+    if (count > 1) {
+      const dx2 = vb.x - va.x, dy2 = vb.y - va.y;
+      const mx2 = (va.x + vb.x) / 2, my2 = (va.y + vb.y) / 2;
+      const nx2 = -dy2, ny2 = dx2;
+      const len2 = Math.sqrt(nx2*nx2 + ny2*ny2) || 1;
+      const sign2 = (pos % 2 === 0) ? 1 : -1;
+      const mag2 = Math.ceil((pos + 1) / 2) * 40 * sign2;
+      const lx = mx2 + (nx2/len2)*mag2*0.6;
+      const ly = my2 + (ny2/len2)*mag2*0.6;
+      ctx.fillStyle = 'rgba(125,133,144,0.8)';
+      ctx.font = '9px IBM Plex Mono';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pos+1, lx, ly);
+    }
   });
 
   // Draw vertices
@@ -1349,8 +1397,7 @@ canvas.addEventListener('mousedown', e => {
     if (v) {
       if (!edgeFirst) { edgeFirst = v; draw(); }
       else if (edgeFirst.id !== v.id) {
-        const exists = edges.some(e => (e.a===edgeFirst.id&&e.b===v.id)||(e.a===v.id&&e.b===edgeFirst.id));
-        if (!exists) edges.push({a: edgeFirst.id, b: v.id});
+        edges.push({a: edgeFirst.id, b: v.id});
         edgeFirst = null;
         analyze();
       }
@@ -1403,8 +1450,7 @@ canvas.addEventListener('touchstart', e => {
     if (v) {
       if (!edgeFirst) { edgeFirst = v; draw(); }
       else if (edgeFirst.id !== v.id) {
-        const exists = edges.some(e2 => (e2.a===edgeFirst.id&&e2.b===v.id)||(e2.a===v.id&&e2.b===edgeFirst.id));
-        if (!exists) edges.push({a: edgeFirst.id, b: v.id});
+        edges.push({a: edgeFirst.id, b: v.id});
         edgeFirst = null;
         analyze();
       }
@@ -1442,7 +1488,7 @@ canvas.addEventListener('touchend', e => {
 function loadExample(name) {
   clearGraph();
   if (name === 'k4') {
-    const cx = 350, cy = 190, r = 120;
+    const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(canvas.width, canvas.height)*0.28;
     for (let i = 0; i < 4; i++) {
       const a = (i/4)*Math.PI*2 - Math.PI/2;
       vertices.push({id:i, x:cx+r*Math.cos(a), y:cy+r*Math.sin(a), label:String.fromCharCode(65+i)});
@@ -1450,7 +1496,7 @@ function loadExample(name) {
     for (let i=0;i<4;i++) for(let j=i+1;j<4;j++) edges.push({a:i,b:j});
   } else if (name === 'k33') {
     // K3,3 bipartite
-    const lx=180, rx=520, ys=[100,190,280];
+    const lx=canvas.width*0.25, rx=canvas.width*0.75, ys=[canvas.height*0.2,canvas.height*0.5,canvas.height*0.8];
     for(let i=0;i<3;i++) vertices.push({id:i,x:lx,y:ys[i],label:['A','B','C'][i]});
     for(let i=0;i<3;i++) vertices.push({id:3+i,x:rx,y:ys[i],label:['D','E','F'][i]});
     for(let i=0;i<3;i++) for(let j=0;j<3;j++) edges.push({a:i,b:3+j});
@@ -1481,9 +1527,8 @@ function loadExample(name) {
   analyze();
 }
 
-// Initial draw
-resizeCanvas();
-draw();
+// Initial draw — delay so CSS has finished laying out the canvas
+setTimeout(resizeCanvas, 60);
 </script>
 </body>
 </html>

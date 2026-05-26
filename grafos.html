@@ -1326,12 +1326,27 @@ function draw() {
     const nx = -dy, ny = dx; // perpendicular to edge
     const len = Math.sqrt(nx*nx + ny*ny) || 1;
 
-    // Distribute offsets symmetrically around 0:
-    // count=1 → [0], count=2 → [-1,+1], count=3 → [-1,0,+1], count=4 → [-2,-1,+1,+2]
-    const half = (count - 1) / 2;
-    const rawOffset = pos - half; // e.g. for count=2: pos0→-0.5, pos1→+0.5
+    // Offsets: always one straight (0), rest spread symmetrically
+    // count=1 → [0]
+    // count=2 → [0, +1]
+    // count=3 → [-1, 0, +1]
+    // count=4 → [-1, 0, +1, +2]
+    // count=5 → [-2, -1, 0, +1, +2]
     const spread = 50;
-    const magnitude = rawOffset * spread;
+    let offsets = [];
+    if (count % 2 === 1) {
+      // odd: symmetric around 0
+      const half = (count - 1) / 2;
+      for (let i = 0; i < count; i++) offsets.push(i - half);
+    } else {
+      // even: one straight (0), then pairs on each side
+      offsets = [0];
+      for (let i = 1; i <= count - 1; i++) {
+        const side = Math.ceil(i / 2) * (i % 2 === 1 ? 1 : -1);
+        offsets.push(side);
+      }
+    }
+    const magnitude = offsets[pos] * spread;
 
     if (Math.abs(magnitude) < 1) {
       ctx.moveTo(va.x, va.y);

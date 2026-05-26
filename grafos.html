@@ -1321,21 +1321,22 @@ function draw() {
     ctx.beginPath();
     ctx.strokeStyle = '#3d444d';
     ctx.lineWidth = 2;
-    if (count === 1) {
-      // Single edge: straight line
+    const dx = vb.x - va.x, dy = vb.y - va.y;
+    const mx = (va.x + vb.x) / 2, my = (va.y + vb.y) / 2;
+    const nx = -dy, ny = dx; // perpendicular to edge
+    const len = Math.sqrt(nx*nx + ny*ny) || 1;
+
+    // Distribute offsets symmetrically around 0:
+    // count=1 → [0], count=2 → [-1,+1], count=3 → [-1,0,+1], count=4 → [-2,-1,+1,+2]
+    const half = (count - 1) / 2;
+    const rawOffset = pos - half; // e.g. for count=2: pos0→-0.5, pos1→+0.5
+    const spread = 50;
+    const magnitude = rawOffset * spread;
+
+    if (Math.abs(magnitude) < 1) {
       ctx.moveTo(va.x, va.y);
       ctx.lineTo(vb.x, vb.y);
     } else {
-      // Multiple edges: curve each one differently
-      // offset alternates: 0→straight(or slight), 1→curve right, 2→curve left...
-      const dx = vb.x - va.x, dy = vb.y - va.y;
-      const mx = (va.x + vb.x) / 2, my = (va.y + vb.y) / 2;
-      const nx = -dy, ny = dx; // perpendicular
-      const len = Math.sqrt(nx*nx + ny*ny) || 1;
-      // spread factor: even index curves one way, odd the other
-      const spread = 40;
-      const sign = (pos % 2 === 0) ? 1 : -1;
-      const magnitude = Math.ceil((pos + 1) / 2) * spread * sign;
       const cpx = mx + (nx / len) * magnitude;
       const cpy = my + (ny / len) * magnitude;
       ctx.moveTo(va.x, va.y);
@@ -1343,21 +1344,15 @@ function draw() {
     }
     ctx.stroke();
 
-    // Draw edge label (aresta nº) for multi-edges
+    // Label each edge in a multi-edge group
     if (count > 1) {
-      const dx2 = vb.x - va.x, dy2 = vb.y - va.y;
-      const mx2 = (va.x + vb.x) / 2, my2 = (va.y + vb.y) / 2;
-      const nx2 = -dy2, ny2 = dx2;
-      const len2 = Math.sqrt(nx2*nx2 + ny2*ny2) || 1;
-      const sign2 = (pos % 2 === 0) ? 1 : -1;
-      const mag2 = Math.ceil((pos + 1) / 2) * 40 * sign2;
-      const lx = mx2 + (nx2/len2)*mag2*0.6;
-      const ly = my2 + (ny2/len2)*mag2*0.6;
-      ctx.fillStyle = 'rgba(125,133,144,0.8)';
+      const cpx2 = mx + (nx/len)*magnitude*0.55;
+      const cpy2 = my + (ny/len)*magnitude*0.55;
+      ctx.fillStyle = 'rgba(125,133,144,0.85)';
       ctx.font = '9px IBM Plex Mono';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(pos+1, lx, ly);
+      ctx.fillText(pos+1, cpx2, cpy2);
     }
   });
 
@@ -1501,25 +1496,27 @@ function loadExample(name) {
     for(let i=0;i<3;i++) vertices.push({id:3+i,x:rx,y:ys[i],label:['D','E','F'][i]});
     for(let i=0;i<3;i++) for(let j=0;j<3;j++) edges.push({a:i,b:3+j});
   } else if (name === 'euler') {
-    // Eulerian circuit: all even degrees
-    const pts = [{x:200,y:100},{x:500,y:100},{x:600,y:240},{x:500,y:380},{x:200,y:380},{x:100,y:240},{x:350,y:240}];
+    // Eulerian circuit: all even degrees — scale to canvas
+    const W = canvas.width, H = canvas.height;
+    const sc = (px, py) => ({x: px/700*W, y: py/400*H});
+    const pts = [sc(200,100),sc(500,100),sc(600,240),sc(500,360),sc(200,360),sc(100,240),sc(350,230)];
     pts.forEach((p,i) => vertices.push({id:i,x:p.x,y:p.y,label:String.fromCharCode(65+i)}));
     [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[1,6],[2,6],[3,6],[4,6],[5,6]].forEach(([a,b]) => edges.push({a,b}));
   } else if (name === 'path') {
-    // Exactly 2 odd vertices → Eulerian path
-    const pts = [{x:150,y:190},{x:300,y:80},{x:450,y:190},{x:550,y:300},{x:350,y:320},{x:200,y:310}];
+    const W = canvas.width, H = canvas.height;
+    const sc = (px, py) => ({x: px/700*W, y: py/400*H});
+    const pts = [sc(150,190),sc(300,80),sc(450,190),sc(550,300),sc(350,320),sc(200,310)];
     pts.forEach((p,i) => vertices.push({id:i,x:p.x,y:p.y,label:String.fromCharCode(65+i)}));
     [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,2],[1,4]].forEach(([a,b]) => edges.push({a,b}));
   } else if (name === 'konigsberg') {
-    // Königsberg bridges: 4 vertices
+    const W = canvas.width, H = canvas.height;
+    const sc = (px, py) => ({x: px/700*W, y: py/400*H});
     vertices = [
-      {id:0,x:350,y:80,label:'N'},
-      {id:1,x:180,y:200,label:'O'},
-      {id:2,x:350,y:200,label:'I'},
-      {id:3,x:350,y:320,label:'S'},
+      {id:0,...sc(350,60),label:'N'},
+      {id:1,...sc(160,200),label:'O'},
+      {id:2,...sc(350,200),label:'I'},
+      {id:3,...sc(350,340),label:'S'},
     ];
-    // 7 bridges: N-O, N-I, N-I, O-I, O-S, I-S, I-S
-    // We represent with parallel edges by storing them normally (multi-edges)
     edges = [
       {a:0,b:1},{a:0,b:2},{a:0,b:2},{a:1,b:2},{a:1,b:3},{a:2,b:3},{a:2,b:3}
     ];

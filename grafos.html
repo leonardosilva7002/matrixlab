@@ -1064,6 +1064,7 @@ body{
     <div class="graph-controls">
       <button class="btn-ctrl" id="btnAddV" onclick="addVertex()">➕ Adicionar Vértice</button>
       <button class="btn-ctrl" id="edgeModeBtn" onclick="toggleEdgeMode()">🔗 Adicionar Aresta</button>
+      <button class="btn-ctrl" id="loopModeBtn" onclick="toggleLoopMode()">🔁 Adicionar Lacete</button>
       <button class="btn-ctrl danger" onclick="clearGraph()">🗑️ Limpar</button>
       <button class="btn-ctrl" onclick="loadExample('k4')">K₄</button>
       <button class="btn-ctrl" onclick="loadExample('k33')">K₃,₃</button>
@@ -1074,6 +1075,9 @@ body{
     <div id="edgeModeInfo" style="display:none;background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.2);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--gold);margin-bottom:10px">
       ⚡ Modo aresta ativo — clica em dois vértices para os ligar. Clica novamente em "Adicionar Aresta" para cancelar.
     </div>
+    <div id="loopModeInfo" style="display:none;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.2);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--acc2);margin-bottom:10px">
+      🔁 Modo lacete ativo — clica num vértice para criar um lacete. Clica novamente em "Adicionar Lacete" para cancelar.
+    </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">💡 Clica/toca no canvas para adicionar vértice. Duplo-clique para remover.</div>
     <canvas id="graphCanvas" width="700" height="380" style="width:100%;border-radius:8px;cursor:crosshair;background:#1c2128;display:block"></canvas>
 
@@ -1081,16 +1085,85 @@ body{
       <p style="color:var(--muted);font-size:12px">Adiciona vértices e arestas para ver as propriedades do grafo.</p>
     </div>
 
-    <div id="eulerResult" class="euler-result" style="display:none">
-      <div class="er-title">Análise Euleriana</div>
-      <div id="eulerBadges"></div>
-      <div id="eulerExplain" style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+    <!-- ANÁLISE COMPLETA 2.1 a 2.5 -->
+    <div id="analysisPanel" style="display:none;margin-top:16px">
+
+      <!-- 2.1 -->
+      <div class="euler-result" style="margin-bottom:10px">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em;color:var(--acc)">2.1 — INDIQUE</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:10px">
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">a) Conjunto dos Vértices</div>
+            <div id="a21a" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">b) Conjunto das Arestas</div>
+            <div id="a21b" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">c) Vértices Isolados</div>
+            <div id="a21c" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">d) Lacetes</div>
+            <div id="a21d" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">e) Arestas Paralelas</div>
+            <div id="a21e" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">f) Dois Vértices Adjacentes</div>
+            <div id="a21f" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">g) Duas Arestas Adjacentes</div>
+            <div id="a21g" style="font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">h) Ordem do Grafo</div>
+            <div id="a21h" style="font-size:13px;color:var(--acc);font-family:'IBM Plex Mono',monospace;font-weight:600"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+            <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">i) Dimensão do Grafo</div>
+            <div id="a21i" style="font-size:13px;color:var(--acc);font-family:'IBM Plex Mono',monospace;font-weight:600"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2.2 Graus -->
+      <div class="euler-result" style="margin-bottom:10px">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em;color:var(--gold)">2.2 — GRAU DE CADA VÉRTICE</div>
+        <div style="overflow-x:auto;margin-top:10px"><table class="deg-table" id="degTable"></table></div>
+      </div>
+
+      <!-- 2.3 Conexo -->
+      <div class="euler-result" style="margin-bottom:10px">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em;color:var(--green)">2.3 — O GRAFO É CONEXO?</div>
+        <div id="a23" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+      </div>
+
+      <!-- 2.4 Regular -->
+      <div class="euler-result" style="margin-bottom:10px">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em;color:var(--acc2)">2.4 — O GRAFO É REGULAR?</div>
+        <div id="a24" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+      </div>
+
+      <!-- 2.5 Simples -->
+      <div class="euler-result" style="margin-bottom:10px">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em;color:var(--red)">2.5 — O GRAFO É SIMPLES?</div>
+        <div id="a25" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+      </div>
+
+      <!-- Euler -->
+      <div id="eulerResult" class="euler-result" style="display:none">
+        <div class="er-title" style="font-size:11px;letter-spacing:.12em">ANÁLISE EULERIANA</div>
+        <div id="eulerBadges"></div>
+        <div id="eulerExplain" style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.9"></div>
+      </div>
     </div>
 
-    <div id="degTableDiv" style="display:none;margin-top:12px">
-      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Tabela de Graus</div>
-      <div style="overflow-x:auto"><table class="deg-table" id="degTable"></table></div>
-    </div>
+    <div id="degTableDiv" style="display:none"></div>
   </div>
 </section>
 
@@ -1147,6 +1220,7 @@ const ctx = canvas.getContext('2d');
 let vertices = [];
 let edges = [];
 let edgeMode = false;
+let loopMode = false;
 let edgeFirst = null;
 let dragVertex = null;
 let dragOffX = 0, dragOffY = 0;
@@ -1191,21 +1265,28 @@ function addVertex() {
 
 function toggleEdgeMode() {
   edgeMode = !edgeMode;
+  loopMode = false;
+  edgeFirst = null;
+  updateEdgeMode();
+}
+
+function toggleLoopMode() {
+  loopMode = !loopMode;
+  edgeMode = false;
   edgeFirst = null;
   updateEdgeMode();
 }
 
 function updateEdgeMode() {
   const btn = document.getElementById('edgeModeBtn');
+  const lBtn = document.getElementById('loopModeBtn');
   const info = document.getElementById('edgeModeInfo');
-  if (edgeMode) {
-    btn.classList.add('active');
-    info.style.display = 'block';
-  } else {
-    btn.classList.remove('active');
-    info.style.display = 'none';
-    edgeFirst = null;
-  }
+  const lInfo = document.getElementById('loopModeInfo');
+  if (edgeMode) { btn.classList.add('active'); info.style.display='block'; } 
+  else { btn.classList.remove('active'); info.style.display='none'; }
+  if (loopMode) { lBtn.classList.add('active'); lInfo.style.display='block'; } 
+  else { lBtn.classList.remove('active'); lInfo.style.display='none'; }
+  if (!edgeMode) edgeFirst = null;
   draw();
 }
 
@@ -1213,18 +1294,25 @@ function clearGraph() {
   vertices = [];
   edges = [];
   edgeMode = false;
+  loopMode = false;
   edgeFirst = null;
   updateEdgeMode();
   draw();
   document.getElementById('graphInfo').innerHTML = '<p style="color:var(--muted);font-size:12px">Adiciona vértices e arestas para ver as propriedades do grafo.</p>';
-  document.getElementById('eulerResult').style.display = 'none';
-  document.getElementById('degTableDiv').style.display = 'none';
+  document.getElementById('analysisPanel').style.display = 'none';
 }
 
 function getDegrees() {
   const deg = {};
   vertices.forEach(v => deg[v.id] = 0);
-  edges.forEach(e => { deg[e.a] += 1; deg[e.b] += 1; });
+  edges.forEach(e => {
+    if (e.loop) {
+      deg[e.a] += 2; // lacete contribui com grau 2
+    } else {
+      deg[e.a] += 1;
+      deg[e.b] += 1;
+    }
+  });
   return deg;
 }
 
@@ -1244,58 +1332,193 @@ function isConnected() {
 }
 
 function analyze() {
-  if (vertices.length === 0) return;
+  if (vertices.length === 0) {
+    document.getElementById('analysisPanel').style.display = 'none';
+    return;
+  }
   const deg = getDegrees();
   const connected = isConnected();
   const oddVerts = vertices.filter(v => deg[v.id] % 2 !== 0);
   const nOdd = oddVerts.length;
 
-  // Info box
+  // Info box summary
   let info = `<strong>Vértices:</strong> <span class="val">${vertices.length}</span> &nbsp;|&nbsp; `;
   info += `<strong>Arestas:</strong> <span class="val">${edges.length}</span> &nbsp;|&nbsp; `;
   info += `<strong>Conexo:</strong> <span class="val ${connected?'good':''}">${connected ? 'Sim ✔' : 'Não ✗'}</span> &nbsp;|&nbsp; `;
-  info += `<strong>Vért. grau ímpar:</strong> <span class="val ${nOdd===0?'good':nOdd===2?'warn':''}">${nOdd}</span>`;
+  info += `<strong>Grau ímpar:</strong> <span class="val ${nOdd===0?'good':nOdd===2?'warn':''}">${nOdd} vért.</span>`;
   document.getElementById('graphInfo').innerHTML = info;
+  document.getElementById('analysisPanel').style.display = 'block';
 
-  // Degree table
-  if (vertices.length > 0) {
-    let th = '<tr><th>Vértice</th>' + vertices.map(v => `<th>${v.label}</th>`).join('') + '</tr>';
-    let td = '<tr><td style="color:var(--muted);font-family:\'IBM Plex Mono\',monospace">Grau</td>' +
-      vertices.map(v => `<td class="${deg[v.id]%2===0?'deg-even':'deg-odd'}">${deg[v.id]}</td>`).join('') + '</tr>';
-    document.getElementById('degTable').innerHTML = th + td;
-    document.getElementById('degTableDiv').style.display = 'block';
+  // ── 2.1a Conjunto dos vértices ──
+  const vSet = '{' + vertices.map(v => v.label).join(', ') + '}';
+  document.getElementById('a21a').textContent = 'V = ' + vSet;
+
+  // ── 2.1b Conjunto das arestas ──
+  const eSet = edges.map((e,i) => {
+    if (e.loop) {
+      const va = vertices.find(v=>v.id===e.a);
+      return `{${va.label},${va.label}}`;
+    }
+    const va = vertices.find(v=>v.id===e.a);
+    const vb = vertices.find(v=>v.id===e.b);
+    return `{${va.label},${vb.label}}`;
+  });
+  document.getElementById('a21b').textContent = 'A = {' + eSet.join(', ') + '}';
+
+  // ── 2.1c Vértices isolados ──
+  const isolated = vertices.filter(v => deg[v.id] === 0);
+  document.getElementById('a21c').innerHTML = isolated.length > 0
+    ? isolated.map(v=>`<span style="color:var(--gold)">${v.label}</span>`).join(', ')
+    : '<span style="color:var(--muted)">Nenhum</span>';
+
+  // ── 2.1d Lacetes ──
+  const loops = edges.filter(e => e.loop);
+  if (loops.length > 0) {
+    const loopLabels = loops.map(e => { const v=vertices.find(vv=>vv.id===e.a); return v?v.label:'?'; });
+    document.getElementById('a21d').innerHTML = loopLabels.map(l=>`<span style="color:var(--acc2)">${l}→${l}</span>`).join(', ');
+  } else {
+    document.getElementById('a21d').innerHTML = '<span style="color:var(--muted)">Nenhum</span>';
   }
 
-  // Euler result
-  if (connected && vertices.length > 1) {
+  // ── 2.1e Arestas paralelas ──
+  const pairCount = {};
+  edges.filter(e=>!e.loop).forEach(e => {
+    const key = [Math.min(e.a,e.b), Math.max(e.a,e.b)].join('-');
+    pairCount[key] = (pairCount[key]||0) + 1;
+  });
+  const parallelPairs = Object.entries(pairCount).filter(([,c])=>c>1);
+  if (parallelPairs.length > 0) {
+    const labels = parallelPairs.map(([key, c]) => {
+      const [ia, ib] = key.split('-').map(Number);
+      const va = vertices.find(v=>v.id===ia);
+      const vb = vertices.find(v=>v.id===ib);
+      return `<span style="color:var(--acc)">{${va?va.label:'?'},${vb?vb.label:'?'}} ×${c}</span>`;
+    });
+    document.getElementById('a21e').innerHTML = labels.join(', ');
+  } else {
+    document.getElementById('a21e').innerHTML = '<span style="color:var(--muted)">Nenhuma</span>';
+  }
+
+  // ── 2.1f Dois vértices adjacentes (exemplo) ──
+  const normalEdges = edges.filter(e=>!e.loop);
+  if (normalEdges.length > 0) {
+    const e0 = normalEdges[0];
+    const va = vertices.find(v=>v.id===e0.a), vb = vertices.find(v=>v.id===e0.b);
+    document.getElementById('a21f').innerHTML =
+      `<span style="color:var(--green)">${va.label}</span> e <span style="color:var(--green)">${vb.label}</span> <span style="color:var(--muted);font-size:10px">(ligados por aresta)</span>`;
+  } else {
+    document.getElementById('a21f').innerHTML = '<span style="color:var(--muted)">Sem arestas</span>';
+  }
+
+  // ── 2.1g Duas arestas adjacentes (exemplo) ──
+  let adjEdgeFound = false;
+  for (let i=0; i<edges.length && !adjEdgeFound; i++) {
+    for (let j=i+1; j<edges.length; j++) {
+      const ei=edges[i], ej=edges[j];
+      if (ei.loop||ej.loop) continue;
+      const shared = ei.a===ej.a||ei.a===ej.b||ei.b===ej.a||ei.b===ej.b;
+      if (shared) {
+        const va=vertices.find(v=>v.id===ei.a), vb=vertices.find(v=>v.id===ei.b);
+        const vc=vertices.find(v=>v.id===ej.a), vd=vertices.find(v=>v.id===ej.b);
+        document.getElementById('a21g').innerHTML =
+          `<span style="color:var(--acc)">{${va.label},${vb.label}}</span> e <span style="color:var(--acc)">{${vc.label},${vd.label}}</span> <span style="color:var(--muted);font-size:10px">(vértice comum)</span>`;
+        adjEdgeFound = true;
+        break;
+      }
+    }
+  }
+  if (!adjEdgeFound) document.getElementById('a21g').innerHTML = '<span style="color:var(--muted)">Sem par adjacente</span>';
+
+  // ── 2.1h Ordem ──
+  document.getElementById('a21h').textContent = vertices.length;
+
+  // ── 2.1i Dimensão ──
+  document.getElementById('a21i').textContent = edges.length;
+
+  // ── 2.2 Tabela de graus ──
+  let th = '<tr><th>Vértice</th>' + vertices.map(v => `<th>${v.label}</th>`).join('') + '</tr>';
+  let td = '<tr><td style="color:var(--muted);font-family:\'IBM Plex Mono\',monospace">Grau</td>' +
+    vertices.map(v => `<td class="${deg[v.id]%2===0?'deg-even':'deg-odd'}">${deg[v.id]}</td>`).join('') + '</tr>';
+  document.getElementById('degTable').innerHTML = th + td;
+
+  // ── 2.3 Conexo ──
+  if (connected) {
+    document.getElementById('a23').innerHTML = '<span style="color:var(--green)">✅ Sim, o grafo é conexo.</span> Existe pelo menos um caminho entre qualquer par de vértices.';
+  } else {
+    const comps = getComponents();
+    document.getElementById('a23').innerHTML = `<span style="color:var(--red)">❌ Não, o grafo não é conexo.</span> Tem <strong style="color:var(--text)">${comps.length} componentes conexas</strong>: ${comps.map(c=>`{${c.map(id=>vertices.find(v=>v.id===id).label).join(',')}}`).join(', ')}.`;
+  }
+
+  // ── 2.4 Regular ──
+  const degVals = vertices.map(v=>deg[v.id]);
+  const allSame = degVals.every(d=>d===degVals[0]);
+  if (allSame && vertices.length > 0) {
+    document.getElementById('a24').innerHTML = `<span style="color:var(--green)">✅ Sim, o grafo é ${degVals[0]}-regular.</span> Todos os vértices têm grau <strong style="color:var(--text)">${degVals[0]}</strong>.`;
+  } else {
+    const minD = Math.min(...degVals), maxD = Math.max(...degVals);
+    document.getElementById('a24').innerHTML = `<span style="color:var(--red)">❌ Não, o grafo não é regular.</span> Os graus variam entre <strong style="color:var(--text)">${minD}</strong> e <strong style="color:var(--text)">${maxD}</strong>: ${vertices.map(v=>`${v.label}(${deg[v.id]})`).join(', ')}.`;
+  }
+
+  // ── 2.5 Simples ──
+  const hasLoops = edges.some(e=>e.loop);
+  const hasParallel = Object.values(pairCount).some(c=>c>1);
+  if (!hasLoops && !hasParallel) {
+    document.getElementById('a25').innerHTML = '<span style="color:var(--green)">✅ Sim, o grafo é simples.</span> Não tem lacetes nem arestas paralelas.';
+  } else {
+    let reasons = [];
+    if (hasLoops) reasons.push('tem <strong style="color:var(--acc2)">lacetes</strong>');
+    if (hasParallel) reasons.push('tem <strong style="color:var(--acc)">arestas paralelas</strong>');
+    document.getElementById('a25').innerHTML = `<span style="color:var(--red)">❌ Não, o grafo não é simples.</span> Porque ${reasons.join(' e ')}.`;
+  }
+
+  // ── Euler ──
+  if (connected && vertices.length > 1 && !hasLoops) {
     document.getElementById('eulerResult').style.display = 'block';
-    let badges = '';
-    let explain = '';
+    let badges = '', explain = '';
     if (nOdd === 0) {
       badges += '<span class="euler-badge yes">✅ Circuito Euleriano</span>';
       badges += '<span class="euler-badge yes">✅ Caminho Euleriano</span>';
-      explain = 'Todos os vértices têm grau par → pelo Teorema de Euler (2), existe um <strong style="color:var(--green)">circuito euleriano</strong>. O grafo é euleriano.';
+      explain = 'Todos os vértices têm grau par → pelo Teorema 2, existe <strong style="color:var(--green)">circuito euleriano</strong>.';
     } else if (nOdd === 2) {
       badges += '<span class="euler-badge no">❌ Circuito Euleriano</span>';
       badges += '<span class="euler-badge yes">✅ Caminho Euleriano</span>';
-      explain = `Exatamente 2 vértices de grau ímpar (${oddVerts.map(v=>v.label).join(', ')}) → pelo Teorema de Euler (1), existe um <strong style="color:var(--gold)">caminho euleriano</strong> que começa em ${oddVerts[0].label} e termina em ${oddVerts[1].label}.`;
+      explain = `2 vértices de grau ímpar (${oddVerts.map(v=>v.label).join(', ')}) → pelo Teorema 1, existe <strong style="color:var(--gold)">caminho euleriano</strong> de ${oddVerts[0].label} a ${oddVerts[1].label}.`;
     } else {
       badges += '<span class="euler-badge no">❌ Circuito Euleriano</span>';
       badges += '<span class="euler-badge no">❌ Caminho Euleriano</span>';
       const needed = nOdd / 2;
-      explain = `${nOdd} vértices de grau ímpar (${oddVerts.map(v=>v.label).join(', ')}) → não existe caminho nem circuito euleriano. Para eulerizar, adicionar ${needed} aresta${needed>1?'s':''} a ligar pares de vértices ímpares.`;
+      explain = `${nOdd} vértices de grau ímpar → não existe. Para eulerizar: adicionar ${needed} aresta${needed>1?'s':''}.`;
     }
     document.getElementById('eulerBadges').innerHTML = badges;
     document.getElementById('eulerExplain').innerHTML = explain;
-  } else if (!connected) {
-    document.getElementById('eulerResult').style.display = 'block';
-    document.getElementById('eulerBadges').innerHTML = '<span class="euler-badge no">❌ Grafo não conexo</span>';
-    document.getElementById('eulerExplain').innerHTML = 'Os Teoremas de Euler requerem que o grafo seja <strong>conexo</strong>.';
   } else {
     document.getElementById('eulerResult').style.display = 'none';
   }
 
   draw();
+}
+
+function getComponents() {
+  const visited = new Set();
+  const components = [];
+  vertices.forEach(v => {
+    if (!visited.has(v.id)) {
+      const comp = [];
+      const queue = [v.id];
+      visited.add(v.id);
+      while (queue.length) {
+        const cur = queue.shift();
+        comp.push(cur);
+        edges.forEach(e => {
+          if (e.loop) return;
+          if (e.a===cur && !visited.has(e.b)) { visited.add(e.b); queue.push(e.b); }
+          if (e.b===cur && !visited.has(e.a)) { visited.add(e.a); queue.push(e.a); }
+        });
+      }
+      components.push(comp);
+    }
+  });
+  return components;
 }
 
 function draw() {
@@ -1306,6 +1529,7 @@ function draw() {
   // Group edges by pair to offset parallel ones
   const edgePairs = {};
   edges.forEach((e, idx) => {
+    if (e.loop) return; // lacetes tratados separadamente
     const key = [Math.min(e.a,e.b), Math.max(e.a,e.b)].join('-');
     if (!edgePairs[key]) edgePairs[key] = [];
     edgePairs[key].push(idx);
@@ -1314,6 +1538,24 @@ function draw() {
     const va = vertices.find(v => v.id === e.a);
     const vb = vertices.find(v => v.id === e.b);
     if (!va || !vb) return;
+
+    // Draw loop (lacete)
+    if (e.loop) {
+      const r = 22;
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(188,140,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.arc(va.x + r, va.y - r, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // label
+      ctx.fillStyle = 'rgba(188,140,255,0.9)';
+      ctx.font = '10px IBM Plex Mono';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('↺', va.x + r * 2 + 4, va.y - r * 2 + 2);
+      return;
+    }
+
     const key = [Math.min(e.a,e.b), Math.max(e.a,e.b)].join('-');
     const group = edgePairs[key];
     const count = group.length;
@@ -1404,6 +1646,13 @@ function draw() {
 canvas.addEventListener('mousedown', e => {
   const {x, y} = getCanvasXY(e);
   const v = getVertex(x, y);
+  if (loopMode) {
+    if (v) {
+      edges.push({a: v.id, b: v.id, loop: true});
+      analyze();
+    }
+    return;
+  }
   if (edgeMode) {
     if (v) {
       if (!edgeFirst) { edgeFirst = v; draw(); }
@@ -1416,7 +1665,6 @@ canvas.addEventListener('mousedown', e => {
   } else {
     if (v) { dragVertex = v; dragOffX = v.x - x; dragOffY = v.y - y; }
     else {
-      // click on empty canvas: add vertex here
       const label = String.fromCharCode(65 + vertices.length % 26) + (vertices.length >= 26 ? Math.floor(vertices.length/26) : '');
       vertices.push({ id: vertices.length, x, y, label });
       draw();
@@ -1457,6 +1705,10 @@ canvas.addEventListener('touchstart', e => {
   const x = (t.clientX - rect.left) * scaleX;
   const y = (t.clientY - rect.top) * scaleY;
   const v = getVertex(x, y);
+  if (loopMode) {
+    if (v) { edges.push({a: v.id, b: v.id, loop: true}); analyze(); }
+    return;
+  }
   if (edgeMode) {
     if (v) {
       if (!edgeFirst) { edgeFirst = v; draw(); }
@@ -1469,7 +1721,6 @@ canvas.addEventListener('touchstart', e => {
   } else {
     if (v) { dragVertex = v; dragOffX = v.x - x; dragOffY = v.y - y; }
     else {
-      // tap on empty: add vertex at that position
       const label = String.fromCharCode(65 + vertices.length % 26) + (vertices.length >= 26 ? Math.floor(vertices.length/26) : '');
       vertices.push({ id: vertices.length, x, y, label });
       draw();
